@@ -1,6 +1,7 @@
 name: BC Lint
 
 on:
+  push:
   pull_request:
     types:
       - opened
