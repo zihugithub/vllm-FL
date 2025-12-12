@@ -60,5 +60,3 @@ jobs:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
-
-68949ca41dada3e4f79d08d3a6f869b5d61ef0f9
