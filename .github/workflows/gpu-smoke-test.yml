@@ -8,18 +8,15 @@ on:
 
 jobs:
   ubuntu-gpu-smoke-test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     container:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.15.1-python3.12-torch2.7.1-time2512031818-inference
       ports:
         - 80
       volumes:
-        - /home/flagscale_cicd/flask/static:/workspace/report
-        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
-        - /home/flagscale_cicd/sccache:/root/.cache/sccache
-      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
+      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
 
     steps:
       - name: Checkout Code
