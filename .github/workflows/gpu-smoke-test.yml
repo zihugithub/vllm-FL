@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
-      image: flagscale:cuda12.8.1-cudnn9.15.1-python3.12-torch2.7.1-time2512031818-inference
+      image: localhost:5000/flagscale:cuda12.8.1-cudnn9.15.1-python3.12-torch2.7.1-time2512031818-inference
       ports:
         - 80
       volumes:
@@ -39,30 +39,30 @@ jobs:
           set-safe-directory: true
           retry-on-intr: fail=5,delay=180000
 
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: |
-            requirements/**/*.txt
-            pyproject.toml
-          python-version: '3.12'
+      # - uses: astral-sh/setup-uv@v7
+      #   with:
+      #     enable-cache: true
+      #     cache-dependency-glob: |
+      #       requirements/**/*.txt
+      #       pyproject.toml
+      #     python-version: '3.12'
 
-      - name: Create virtual environment
-        run: |
-          uv venv
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+      # - name: Create virtual environment
+      #   run: |
+      #     uv venv
+      #     echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
-      - name: Install dependencies and build vLLM
-        run: |
-          source /root/miniconda3/bin/activate flagscale-inference
-          export SCCACHE_DIR=/root/.cache/sccache
-          sccache --start-server
-          sccache --show-stats
-          MAX_JOBS=$(nproc) uv pip install --no-build-isolation . -vvv
-          sccache --show-stats
-          conda deactivate
-        env:
-          CMAKE_BUILD_PARALLEL_LEVEL: 4
+      # - name: Install dependencies and build vLLM
+      #   run: |
+      #     source /root/miniconda3/bin/activate flagscale-inference
+      #     export SCCACHE_DIR=/root/.cache/sccache
+      #     sccache --start-server
+      #     sccache --show-stats
+      #     MAX_JOBS=$(nproc) uv pip install --no-build-isolation . -vvv
+      #     sccache --show-stats
+      #     conda deactivate
+      #   env:
+      #     CMAKE_BUILD_PARALLEL_LEVEL: 4
 
       - name: Verify installation
         run: |
