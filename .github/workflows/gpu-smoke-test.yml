@@ -68,6 +68,7 @@ jobs:
           conda deactivate
 
       - name: Smoke test vllm serve
+        shell: bash
         run: |
           source /root/miniconda3/bin/activate flagscale-inference
           # Start server in background
@@ -110,4 +111,3 @@ jobs:
           # Cleanup
           kill "$SERVER_PID"
           conda deactivate
-        SHELL: bash
