@@ -3,17 +3,25 @@ name: Cleanup PR Body
 on:
   pull_request_target:
     types: [opened, reopened, edited]
+  push:
+    branches:
+      - run_test251211
 
 permissions:
   pull-requests: write
+  contents: read # 新增：push事件需读取仓库内容权限
 
 jobs:
   update-description:
     runs-on: ubuntu-latest
 
+    # 关键：仅在有对应PR时执行（避免无PR的push空跑）
+    if: github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.event.head_commit != null)
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # 新增：拉取全量提交记录，用于关联PR
 
       - name: Set up Python
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
@@ -23,9 +31,40 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install regex
+          python3 -m pip install regex PyGithub # 新增PyGithub: 简化API调用
+
+      # 新增步骤：根据push提交关联PR编号
+      - name: Get PR number from push
+        id: get_pr
+        if: github.event_name == 'push'
+        run: |
+          # 通过GitHub API查找与当前提交关联的PR
+          PR_NUMBER=$(python3 - <<EOF
+          from github import Github
+          import os
+
+          g = Github(os.getenv('GITHUB_TOKEN'))
+          repo = g.get_repo(os.getenv('GITHUB_REPOSITORY'))
+          commit_sha = os.getenv('GITHUB_SHA')
+
+          # 查找包含该提交的开放PR
+          prs = repo.get_pulls(state='open', sort='updated', base='main')
+          target_pr = None
+          for pr in prs:
+              if any(commit.sha == commit_sha for commit in pr.get_commits()):
+                  target_pr = pr.number
+                  break
+
+          print(f"::set-output name=pr_number::{target_pr}")
+          EOF
+          )
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
       - name: Update PR description
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash .github/scripts/cleanup_pr_body.sh "${{ github.event.number }}"
+          # 区分事件类型：PR事件直接用编号，push事件用关联的编号
+          PR_NUMBER: ${{ github.event_name == 'pull_request_target' && github.event.number || env.PR_NUMBER }}
+        # 仅当PR编号存在时执行脚本
+        if: env.PR_NUMBER != '' && env.PR_NUMBER != 'None'
+        run: bash .github/scripts/cleanup_pr_body.sh "${{ env.PR_NUMBER }}"
