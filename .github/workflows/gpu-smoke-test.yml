@@ -110,3 +110,4 @@ jobs:
           # Cleanup
           kill "$SERVER_PID"
           conda deactivate
+        SHELL: bash

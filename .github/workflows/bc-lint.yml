@@ -2,7 +2,7 @@ name: BC Lint
 
 on:
   push:
-    branches: [ run_test251211 ]
+    branches: [ main ]
   workflow_dispatch:
   pull_request:
     types:
