@@ -62,6 +62,7 @@ jobs:
       #     CMAKE_BUILD_PARALLEL_LEVEL: 4
 
       - name: Verify installation
+        shell: bash
         run: |
           source /root/miniconda3/bin/activate flagscale-inference
           python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
