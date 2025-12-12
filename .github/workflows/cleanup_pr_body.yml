@@ -1,7 +1,6 @@
 name: Cleanup PR Body
 
 on:
-  push:
   pull_request_target:
     types: [opened, reopened, edited]
   push:
