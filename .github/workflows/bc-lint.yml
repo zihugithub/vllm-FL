@@ -2,6 +2,7 @@ name: BC Lint
 
 on:
   push:
+    branches: [ run_test251211 ]
   workflow_dispatch:
   pull_request:
     types:
@@ -16,6 +17,33 @@ jobs:
     if: github.repository_owner == 'zihugithub'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整提交历史，用于获取 push 场景的 base sha
+
+      - name: Set up environment variables
+        id: set_vars
+        shell: bash
+        run: |
+          # 区分 PR/push 场景，赋值 base_sha 和 head_sha
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # PR 场景：使用 PR 的 base/head sha
+            echo "base_sha=${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
+            echo "head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+            echo "suppression=${{ contains(github.event.pull_request.labels.*.name, 'suppress-bc-linter') }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Push 场景：head_sha 为当前推送的 commit，base_sha 为上一个 commit
+            echo "head_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "base_sha=$(git rev-parse ${{ github.sha }}~1)" >> $GITHUB_OUTPUT
+            echo "suppression=false" >> $GITHUB_OUTPUT  # push 场景默认不跳过检测
+          else
+            # 手动触发/其他场景：默认使用 HEAD 和 HEAD~1
+            echo "head_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+            echo "base_sha=$(git rev-parse HEAD~1)" >> $GITHUB_OUTPUT
+            echo "suppression=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run BC Lint Action
         uses: pytorch/test-infra/.github/actions/bc-lint@main
         with:
