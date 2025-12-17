@@ -1,0 +1,50 @@
+name: Basic Correctness Test
+
+on:
+  push:
+    branches:
+      - run_test251211
+    paths:
+      - 'vllm/'
+      - 'tests/basic_correctness/test_basic_correctness'
+      - 'tests/basic_correctness/test_cpu_offload'
+      - 'tests/basic_correctness/test_cumem.py'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  ubuntu-gpu-smoke-test:
+    runs-on: self-hosted
+    container:
+      image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
+      ports:
+        - 80
+      volumes:
+        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          ssh-strict: true
+          ssh-user: git
+          persist-credentials: true
+          clean: true
+          sparse-checkout-cone-mode: true
+          fetch-tags: false
+          show-progress: true
+          lfs: false
+          submodules: false
+          set-safe-directory: true
+          retry-on-intr: fail=5,delay=180000
+
+      - name: Basic Correctness Test
+        timeout-minutes: 30
+        run: |
+          cd tests
+          pytest -v -s basic_correctness/test_cumem.py
+          pytest -v -s basic_correctness/test_basic_correctness.py
+          pytest -v -s basic_correctness/test_cpu_offload.py

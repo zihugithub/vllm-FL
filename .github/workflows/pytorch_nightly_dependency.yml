@@ -1,0 +1,110 @@
+name: Pytorch Nightly Dependency Override Check
+
+on:
+  push:
+    branches:
+      - run_test251211
+    paths:
+      - 'requirements/nightly_torch_test.txt'
+      - 'tests/standalone_tests/pytorch_nightly_dependency.sh'
+  workflow_dispatch:  # Manual trigger
+
+# 全局环境变量：提升日志可读性和依赖安装稳定性
+env:
+  PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，实时打印日志
+  PIP_DEFAULT_TIMEOUT: "120"     # 延长pip超时，适配大依赖包安装
+  PIP_NO_CACHE_DIR: "0"          # 启用pip缓存，加速重复测试
+  TORCH_NIGHTLY: "true"          # 标记使用PyTorch夜间版
+
+jobs:
+  pytorch-nightly-dependency:
+    runs-on: self-hosted
+    # 软失败配置：测试失败不阻塞后续流程（对齐原配置soft_fail: true）
+    continue-on-error: true
+    outputs:
+      test_result: ${{ steps.dependency-check.outcome }}
+
+    container:
+      image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
+      ports:
+        - 80:80
+      volumes:
+        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+        - /tmp/nightly-logs:/tmp/nightly-logs
+      options: >-
+        --gpus all 
+        --shm-size=500g 
+        --privileged 
+        --ipc=host 
+        --ulimit memlock=-1 
+        --ulimit stack=67108864 
+        --ulimit nofile=65535:65535 
+        --user root
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          ssh-strict: true
+          ssh-user: git
+          persist-credentials: true
+          clean: true
+          sparse-checkout-cone-mode: true
+          # 仅检出必要文件，加速克隆（轻量级检查无需全量代码）
+          sparse-checkout: |
+            requirements/nightly_torch_test.txt
+            tests/standalone_tests/pytorch_nightly_dependency.sh
+          fetch-tags: false
+          show-progress: true
+          lfs: false
+          submodules: false
+          set-safe-directory: ${{ github.workspace }}
+          retry-on-intr: fail=5,delay=180000
+
+      - name: Pre-Check Environment
+        run: |
+          echo "===== System Info ====="
+          uname -a
+          python3 --version
+          pip3 --version
+          echo "===== GPU Info ====="
+          nvidia-smi || echo "GPU check skipped (non-GPU env)"
+          echo "===== Disk Space ====="
+          df -h
+
+      - name: Pytorch Nightly Dependency Override Check
+        id: dependency-check
+        working-directory: ${{ github.workspace }}/tests
+        run: |
+          echo "===== Script Content ====="
+          cat standalone_tests/pytorch_nightly_dependency.sh
+
+          # 执行检查脚本，输出日志到文件（便于后续分析）
+          bash standalone_tests/pytorch_nightly_dependency.sh > /tmp/nightly-logs/dependency_check.log 2>&1
+
+          echo "===== Check Result (Last 100 Lines) ====="
+          tail -100 /tmp/nightly-logs/dependency_check.log
+
+      - name: Upload Nightly Dependency Logs
+        if: always()  # 始终执行，即使前面步骤软失败
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: pytorch-nightly-deps-log-${{ github.run_id }}
+          path: /tmp/nightly-logs/
+          retention-days: 7  # 日志保留7天
+          if-no-files-found: warn  # 无文件时仅警告，不中断
+
+      # 步骤5：失败提示（可选，增强可维护性）
+      - name: Print Fix Guide on Incompatibility
+        if: steps.dependency-check.outcome == 'failure'
+        run: |
+          echo "============================================"
+          echo "PyTorch Nightly Dependency Check Failed!"
+          echo "Fix Steps:"
+          echo "1. Download the log artifact 'pytorch-nightly-deps-log-${{ github.run_id }}'"
+          echo "2. Check 'dependency_check.log' to find incompatible packages"
+          echo "3. Add the package to whitelist in /vllm/tools/generate_nightly_torch_test.py"
+          echo "============================================"

@@ -1,0 +1,56 @@
+name: Async Engine, Inputs, Utils, Worker Test
+
+on:
+  push:
+    branches:
+      - run_test251211
+    paths:
+      - 'vllm'
+      - 'tests/test_inputs.py'
+      - 'tests/test_outputs.py'
+      - 'tests/multimodal'
+      - 'tests/utils_'
+      - 'tests/standalone_tests/lazy_imports.py'
+      - 'tests/transformers_utils'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  ubuntu-gpu-smoke-test:
+    runs-on: self-hosted
+    container:
+      image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
+      ports:
+        - 80
+      volumes:
+        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          ssh-strict: true
+          ssh-user: git
+          persist-credentials: true
+          clean: true
+          sparse-checkout-cone-mode: true
+          fetch-tags: false
+          show-progress: true
+          lfs: false
+          submodules: false
+          set-safe-directory: true
+          retry-on-intr: fail=5,delay=180000
+
+      - name: Async Engine, Inputs, Utils, Worker Test
+        timeout-minutes: 60
+        run: |
+          cd tests
+          python3 standalone_tests/lazy_imports.py
+          pytest -v -s test_inputs.py
+          pytest -v -s test_outputs.py
+          pytest -v -s multimodal
+          pytest -v -s utils_ # Utils
+          pytest -v -s transformers_utils # transformers_utils

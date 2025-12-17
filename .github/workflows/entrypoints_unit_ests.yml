@@ -1,0 +1,48 @@
+name: Entrypoints Unit Tests
+
+on:
+  push:
+    branches:
+      - run_test251211
+    paths:
+      - 'vllm/entrypoints'
+      - 'tests/entrypoints/'
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  ubuntu-gpu-smoke-test:
+    runs-on: self-hosted
+    container:
+      image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
+      ports:
+        - 80
+      volumes:
+        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          ssh-strict: true
+          ssh-user: git
+          persist-credentials: true
+          clean: true
+          sparse-checkout-cone-mode: true
+          fetch-tags: false
+          show-progress: true
+          lfs: false
+          submodules: false
+          set-safe-directory: true
+          retry-on-intr: fail=5,delay=180000
+
+      - name: Entrypoints Unit Tests
+        timeout-minutes: 10
+        run: |
+          cd tests
+          pytest -v -s entrypoints/openai/tool_parsers --ignore=entrypoints/openai/tool_parsers/test_hermes_tool_parser.py
+          pytest -v -s entrypoints/ --ignore=entrypoints/llm --ignore=entrypoints/openai --ignore=entrypoints/offline_mode --ignore=entrypoints/test_chat_utils.py  --ignore=entrypoints/pooling
+
