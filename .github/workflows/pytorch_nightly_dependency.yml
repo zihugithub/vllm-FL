@@ -46,11 +46,6 @@ jobs:
         --ulimit stack=67108864 
         --ulimit nofile=65535:65535 
         --user root
-    
-    env:
-      # 用空值合并运算符保证变量有默认值
-      # SHORT_SHA: 
-      SHORT_SHA: ${{ substring(coalesce(github.sha, 'unknown-sha'), 0, 8) }}
 
     steps:
       - name: Checkout Code
@@ -116,6 +111,17 @@ jobs:
             echo "⚠️ Adding execute permission to script..."
             chmod +x "$SCRIPT_PATH"
           fi
+
+      - name: Generate compatible short hashes
+        id: gen-sha
+        run: |
+          SHORT_SHA=${{ github.sha }}
+          if [ -z "$SHORT_SHA" ]; then
+            SHORT_SHA="unknown-sha"
+          else
+            SHORT_SHA=${SHORT_SHA:0:8}
+          fi
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
 
       - name: Pytorch Nightly Dependency Override Check
         id: dependency-check
