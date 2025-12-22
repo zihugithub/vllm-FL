@@ -15,9 +15,11 @@ concurrency:
 # 全局环境变量：提升日志可读性和依赖安装稳定性
 env:
   PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，实时打印日志
-  PIP_DEFAULT_TIMEOUT: "120"     # 延长pip超时，适配大依赖包安装
+  PIP_DEFAULT_TIMEOUT: "180"     # 进一步延长超时（夜间版依赖包可能更大）
   PIP_NO_CACHE_DIR: "0"          # 启用pip缓存，加速重复测试
   TORCH_NIGHTLY: "true"          # 标记使用PyTorch夜间版
+  LOG_DIR: "/tmp/nightly-logs"   # 统一日志目录变量，便于维护
+  SCRIPT_PATH: "${{ github.workspace }}/tests/standalone_tests/pytorch_nightly_dependency.sh"  # 脚本路径变量
 
 jobs:
   pytorch-nightly-dependency:
@@ -49,8 +51,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6.0.1
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }} # 兼容push/pr两种触发场景
+          ref: ${{ github.event.pull_request.head.ref }} # 兼容push/pr两种触发场景
           ssh-strict: true
           ssh-user: git
           persist-credentials: true
@@ -66,48 +68,94 @@ jobs:
           submodules: false
           set-safe-directory: ${{ github.workspace }}
           retry-on-intr: fail=5,delay=180000
+          timeout-minutes: 10  # 增加检出超时限制
 
       - name: Pre-Check Environment
+        timeout-minutes: 5  # 环境检查超时限制
         run: |
           echo "===== System Info ====="
           uname -a
-          python3 --version
-          pip3 --version
+          python3 --version || python --version  # 兼容python/python3命令
+          pip3 --version || pip --version        # 兼容pip/pip3命令
+
           echo "===== GPU Info ====="
-          nvidia-smi || echo "GPU check skipped (non-GPU env)"
+          if command -v nvidia-smi &>/dev/null; then
+            nvidia-smi
+          else
+            echo "⚠️ GPU检查跳过 (未找到nvidia-smi)"
+          fi
+
           echo "===== Disk Space ====="
           df -h
+
+          echo "===== Available memory ====="
+          free -h
+
+          mkdir -p $LOG_DIR && chmod 777 $LOG_DIR
+
+      - name: Validate Script and Requirements
+        timeout-minutes: 2
+        run: |
+          echo "===== Validate Critical Files ====="
+          if [ ! -f "${{ github.workspace }}/requirements/nightly_torch_test.txt" ]; then
+            echo "❌ Error: nightly_torch_test.txt not found!"
+            exit 1
+          fi
+
+          if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "❌ Error: pytorch_nightly_dependency.sh not found!"
+            exit 1
+          fi
+
+          if [ ! -x "$SCRIPT_PATH" ]; then
+            echo "⚠️ Adding execute permission to script..."
+            chmod +x "$SCRIPT_PATH"
+          fi
 
       - name: Pytorch Nightly Dependency Override Check
         id: dependency-check
         working-directory: ${{ github.workspace }}/tests
         run: |
+          source .github/workflows/scripts/gpu_check.sh
+          wait_for_gpu
+
           echo "===== Script Content ====="
           cat standalone_tests/pytorch_nightly_dependency.sh
 
-          # 执行检查脚本，输出日志到文件（便于后续分析）
-          bash standalone_tests/pytorch_nightly_dependency.sh > /tmp/nightly-logs/dependency_check.log 2>&1
+          # 执行检查脚本, 同时输出到日志文件和控制台 (tee双向输出)
+          bash standalone_tests/pytorch_nightly_dependency.sh 2>&1 | tee $LOG_DIR/dependency_check.log
+          SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
 
-          echo "===== Check Result (Last 100 Lines) ====="
-          tail -100 /tmp/nightly-logs/dependency_check.log
+          echo "===== 检查完成 at $(date) ====="
+          echo "===== 脚本退出码：$SCRIPT_EXIT_CODE ====="
+          echo "===== 检查结果 (最后200行) ====="
+          tail -100 $LOG_DIR/dependency_check.log
+
+          exit $SCRIPT_EXIT_CODE
 
       - name: Upload Nightly Dependency Logs
         if: always()  # 始终执行，即使前面步骤软失败
         uses: actions/upload-artifact@v4.3.1
         with:
-          name: pytorch-nightly-deps-log-${{ github.run_id }}
-          path: /tmp/nightly-logs/
+          name: pytorch-nightly-deps-log-${{ github.run_id }}-${{ github.sha | substr(0,8) }}
+          path: |
+            $LOG_DIR/
+            ${{ github.workspace }}/requirements/nightly_torch_test.txt  # 附带依赖文件，便于复现
+            $SCRIPT_PATH  # 附带执行脚本，便于复现
           retention-days: 7  # 日志保留7天
-          if-no-files-found: warn  # 无文件时仅警告，不中断
+          if-no-files-found: error  # 无日志文件时标记错误（关键文件缺失需关注）
+          compression-level: 6  # 启用压缩，减少日志文件体积
 
       # 步骤5：失败提示（可选，增强可维护性）
       - name: Print Fix Guide on Incompatibility
         if: steps.dependency-check.outcome == 'failure'
         run: |
           echo "============================================"
-          echo "PyTorch Nightly Dependency Check Failed!"
-          echo "Fix Steps:"
-          echo "1. Download the log artifact 'pytorch-nightly-deps-log-${{ github.run_id }}'"
-          echo "2. Check 'dependency_check.log' to find incompatible packages"
-          echo "3. Add the package to whitelist in /vllm/tools/generate_nightly_torch_test.py"
+          echo "❌ PyTorch 夜间版依赖检查失败！"
           echo "============================================"
+          echo "修复步骤："
+          echo "1. 下载日志制品: pytorch-nightly-deps-log-${{ github.run_id }}-${{ github.sha | substr(0,8) }}"
+          echo "2. 分析 'dependency_check.log' 文件，定位不兼容的包"
+          echo "3. 将问题包添加到白名单：/vllm/tools/generate_nightly_torch_test.py"
+          echo "4. 重新运行前，先在本地使用相同的容器镜像测试"
+          echo "5. 若问题持续, 检查PyTorch夜间版发布说明中的破坏性变更"

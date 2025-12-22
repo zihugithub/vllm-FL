@@ -65,6 +65,9 @@ jobs:
       - name: Smoke test vllm serve
         shell: bash
         run: |
+          source .github/workflows/scripts/gpu_check.sh
+          wait_for_gpu
+
           # Start server in background
           vllm serve /home/gitlab-runner/data/Qwen2.5-7B-Instruct \
             --gpu-memory-utilization=0.9 \
