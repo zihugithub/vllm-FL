@@ -49,7 +49,8 @@ jobs:
     
     env:
       # 用空值合并运算符保证变量有默认值
-      SHORT_SHA: ${{ github.sha[:8] || 'unknown-sha' }}
+      # SHORT_SHA: 
+      SHORT_SHA: ${{ substring(coalesce(github.sha, 'unknown-sha'), 0, 8) }}
 
     steps:
       - name: Checkout Code
