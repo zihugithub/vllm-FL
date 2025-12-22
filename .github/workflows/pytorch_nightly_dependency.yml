@@ -46,6 +46,10 @@ jobs:
         --ulimit stack=67108864 
         --ulimit nofile=65535:65535 
         --user root
+    
+    env:
+      # 用空值合并运算符保证变量有默认值
+      SHORT_SHA: ${{ github.sha[:8] || 'unknown-sha' }}
 
     steps:
       - name: Checkout Code
@@ -137,7 +141,7 @@ jobs:
         if: always()  # 始终执行，即使前面步骤软失败
         uses: actions/upload-artifact@v4.3.1
         with:
-          name: pytorch-nightly-deps-log-${{ github.run_id }}-${{ substr(github.sha, 0, 8) }}
+          name: pytorch-nightly-deps-log-${{ github.run_id }}-${{ env.SHORT_SHA }}
           path: |
             $LOG_DIR/
             ${{ github.workspace }}/requirements/nightly_torch_test.txt  # 附带依赖文件，便于复现
@@ -153,7 +157,7 @@ jobs:
           echo "============================================"
           echo "❌ PyTorch 夜间版依赖检查失败！"
           echo "============================================"
-          echo "1. 下载日志制品: pytorch-nightly-deps-log-${{ github.run_id }}-${{ substr(github.sha, 0, 8) }}"
+          echo "1. 下载日志制品: pytorch-nightly-deps-log-${{ github.run_id }}-${{ env.SHORT_SHA }}"
           echo "2. 分析 'dependency_check.log' 文件，定位不兼容的包"
           echo "3. 将问题包添加到白名单：/vllm/tools/generate_nightly_torch_test.py"
           echo "4. 重新运行前，先在本地使用相同的容器镜像测试"
