@@ -5,7 +5,7 @@ on:
     types: [opened, reopened, edited]
   push:
     branches:
-      - run_test251211
+      - main
 
 permissions:
   pull-requests: write
