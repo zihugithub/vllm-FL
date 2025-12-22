@@ -38,9 +38,9 @@ wait_for_gpu_nvidia() {
             fi
         done
 
-        # If max usage percentage does not exceed 50%, we can proceed
-        # 50% threshold = 50 (since we're using integer percentages)
-        if [ "$need_wait" = false ] && [ $max_usage_percent -le 50 ]; then
+        # If max usage percentage does not exceed 10%, we can proceed
+        # 10% threshold = 10 (since we're using integer percentages)
+        if [ "$need_wait" = false ] && [ $max_usage_percent -le 10 ]; then
             break
         fi
 

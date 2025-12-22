@@ -3,7 +3,7 @@ name: Pytorch Nightly Dependency Override Check
 on:
   push:
     branches:
-      - run_test251211
+      - main
     # paths:
     #   - 'requirements/nightly_torch_test.txt'
     #   - 'tests/standalone_tests/pytorch_nightly_dependency.sh'
