@@ -8,43 +8,113 @@ on:
       - 'vllm/**'
       - 'tests/entrypoints/llm/**'
       - 'tests/entrypoints/offline_mode/**'
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
+
+# 环境变量全局配置（适配torch nightly和vllm）
+env:
+  PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，确保日志实时输出
+  PIP_DEFAULT_TIMEOUT: "120"     # 延长pip超时，适配大依赖安装
+  VLLM_WORKER_MULTIPROC_METHOD: "spawn"  # 全局设置多进程模式
 
 jobs:
   ubuntu-gpu-smoke-test:
     runs-on: self-hosted
+    # 任务级超时（比测试超时多5分钟，预留清理时间）
+    timeout-minutes: 45
+    # 输出测试结果为artifact（便于调试失败用例）
+    outputs:
+      test_result: ${{ steps.test-step.outcome }}
+
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       ports:
-        - 80
+        - 80:80  # 补全端口映射（宿主机:容器）
       volumes:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
+        - /tmp/test-artifacts:/tmp/test-artifacts  # 挂载测试产物目录
+      options: >-  # 优化容器启动参数格式，增强可读性
+        --gpus all
+        --shm-size=500g
+        --privileged
+        --ipc=host
+        --ulimit memlock=-1
+        --ulimit stack=67108864
+        --ulimit nofile=65535:65535
+        --user root
+        --env "TORCH_NIGHTLY=true"  # 传递torch nightly标识
 
     steps:
+      # 步骤1：代码检出（修复PR触发逻辑，兼容推送/手动两种场景）
       - name: Checkout Code
         uses: actions/checkout@v6.0.1
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          # 兼容push和pr触发：push时用github.ref，pr时用head ref
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           ssh-strict: true
           ssh-user: git
           persist-credentials: true
           clean: true
           sparse-checkout-cone-mode: true
+          sparse-checkout: |  # 仅检出需要的目录，加速克隆
+            vllm/
+            tests/entrypoints/llm/
+            tests/entrypoints/offline_mode/
           fetch-tags: false
           show-progress: true
           lfs: false
           submodules: false
-          set-safe-directory: true
-          retry-on-intr: fail=5,delay=180000
+          set-safe-directory: ${{ github.workspace }}
+          retry-on-intr: fail=5,delay=180000  # 重试策略：失败5次，间隔3分钟
 
-      - name: Entrypoints Integration Test (LLM)
-        timeout-minutes: 40
+      # 步骤2：环境准备（安装依赖，适配torch nightly）
+      - name: Prepare Test Environment
         run: |
-          cd tests
-          export VLLM_WORKER_MULTIPROC_METHOD=spawn
-          pytest -v -s entrypoints/llm --ignore=entrypoints/llm/test_generate.py --ignore=entrypoints/llm/test_collective_rpc.py
-          pytest -v -s entrypoints/llm/test_generate.py # it needs a clean process
-          pytest -v -s entrypoints/offline_mode # Needs to avoid interference with other tests
+          echo "===== Install Torch Nightly ====="
+          pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121
+          echo "===== Install VLLM Dependencies ====="
+          pip3 install -r requirements.txt  # 假设项目根目录有依赖文件
+          pip3 install pytest==7.4.2       # 固定pytest版本，避免兼容性问题
+          echo "===== Verify Environment ====="
+          python3 -c "import torch; print(f'Torch Version: {torch.__version__}')"
+          python3 -c "import vllm; print(f'VLLM Version: {vllm.__version__}')"
+          nvidia-smi  # 打印GPU信息，确认硬件可用
+
+      # 步骤3：核心测试执行（严格对齐原配置逻辑）
+      - name: Entrypoints Integration Test (LLM)
+        id: test-step
+        timeout-minutes: 40  # 测试级超时（原配置的40分钟）
+        working-directory: ${{ github.workspace }}/tests  # 直接指定工作目录，替代cd
+        run: |
+          echo "===== Start LLM Entrypoints Test (Exclude Generate/RPC) ====="
+          pytest -v -s entrypoints/llm \
+            --ignore=entrypoints/llm/test_generate.py \
+            --ignore=entrypoints/llm/test_collective_rpc.py \
+            --junitxml=/tmp/test-artifacts/llm-test-1.xml  # 生成JUnit格式报告，便于CI解析
+
+          echo "===== Run Generate Test (Clean Process) ====="
+          pytest -v -s entrypoints/llm/test_generate.py \
+            --junitxml=/tmp/test-artifacts/llm-test-generate.xml
+
+          echo "===== Run Offline Mode Test (Isolated) ====="
+          pytest -v -s entrypoints/offline_mode \
+            --junitxml=/tmp/test-artifacts/llm-test-offline.xml
+
+      # 步骤4：上传测试报告（失败时保留日志，便于调试）
+      - name: Upload Test Artifacts
+        if: always()  # 无论测试成功/失败都执行
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: llm-test-reports-${{ github.run_id }}
+          path: /tmp/test-artifacts/
+          retention-days: 7  # 报告保留7天
+          if-no-files-found: warn  # 无文件时仅警告，不中断流程
+
+      # 步骤5：失败通知（可选，可根据需要开启）
+      - name: Notify Test Failure
+        if: failure()  # 仅测试失败时执行
+        run: |
+          echo "===== Test Failed! ====="
+          # 可扩展：发送邮件/企业微信/钉钉通知
+          # curl -X POST https://open.feishu.cn/open-apis/bot/v2/hook/b42bc272-3e8e-4412-ac76-0833ed4ca37a -d "test=llm-entrypoints&status=failed&run_id=${{ github.run_id }}"

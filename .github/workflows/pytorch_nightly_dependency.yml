@@ -7,7 +7,6 @@ on:
     paths:
       - 'requirements/nightly_torch_test.txt'
       - 'tests/standalone_tests/pytorch_nightly_dependency.sh'
-  workflow_dispatch:  # Manual trigger
 
 # 全局环境变量：提升日志可读性和依赖安装稳定性
 env:

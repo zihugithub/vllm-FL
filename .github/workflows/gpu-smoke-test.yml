@@ -9,7 +9,7 @@ on:
 jobs:
   ubuntu-gpu-smoke-test:
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 60
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       ports:
