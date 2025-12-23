@@ -58,8 +58,8 @@ jobs:
           persist-credentials: true
           clean: true
           sparse-checkout-cone-mode: true
-          # 仅检出必要文件，加速克隆（轻量级检查无需全量代码）
           sparse-checkout: |
+            .github/workflows/scripts/gpu_check.sh
             requirements/nightly_torch_test.txt
             tests/standalone_tests/pytorch_nightly_dependency.sh
           fetch-tags: false
