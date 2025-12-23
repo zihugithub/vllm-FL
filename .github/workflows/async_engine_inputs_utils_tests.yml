@@ -22,20 +22,20 @@ on:
   #     - 'tests/standalone_tests/lazy_imports.py'
   #     - 'tests/transformers_utils/**'
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
+#   cancel-in-progress: true
 
 jobs:
-  # compile-vllm:
-  #   uses: ./.github/workflows/reusable-compile-vllm.yml
-  #   with:
-  #     python-version: "3.12"
-  #     cache-dir: "/home/flagscale_cicd/sccache_cache"
-  #     cmake-parallel-level: 4
+  compile-vllm:
+    uses: ./.github/workflows/reusable-compile-vllm.yml
+    with:
+      python-version: "3.12"
+      cache-dir: "/home/yefubao/tmp/sccache"
+      cmake-parallel-level: 4
 
   amd-experimental-test:
-    # needs: compile-vllm
+    needs: compile-vllm
     runs-on: self-hosted
     # runs-on: [ self-hosted, amdexperimental ]
     defaults:
@@ -99,21 +99,6 @@ jobs:
 
           echo "===== Available memory ====="
           free -h
-
-      # - uses: astral-sh/setup-uv@v7
-      #   with:
-      #     enable-cache: true
-      #     cache-dependency-glob: |
-      #       requirements/**/*.txt
-      #       pyproject.toml
-      #     python-version: '3.12'
-
-      # - name: Create virtual environment
-      #   run: |
-      #     uv venv
-      #     echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
-      #     # # 重新安装vLLM (复用编译产物, 不会重新编译)
-      #     # uv pip install -e . -vvv
 
       - name: Install dependencies and build vLLM
         run: |
