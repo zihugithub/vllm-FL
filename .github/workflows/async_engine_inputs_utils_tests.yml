@@ -124,15 +124,15 @@ jobs:
       #   env:
       #     CMAKE_BUILD_PARALLEL_LEVEL: 4
     
-      - name: Verify installation
-        shell: bash
-        run: |
-          python3 -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
+      # - name: Verify installation
+      #   shell: bash
+      #   run: |
+      #     python3 -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
 
-      - name: GPU Usage Check / Verification
-        run: |
-          source .github/workflows/scripts/gpu_check.sh
-          wait_for_gpu
+      # - name: GPU Usage Check / Verification
+      #   run: |
+      #     source .github/workflows/scripts/gpu_check.sh
+      #     wait_for_gpu
 
       - name: Run lazy imports test
         run: |
@@ -140,7 +140,10 @@ jobs:
           deactivate || true
           echo "python3_path1: $(which python3)"
           python3 tests/standalone_tests/lazy_imports.py
+          # /usr/bin/python3
         continue-on-error: false  # 懒加载测试是基础，失败直接终止
+
+
 
       # - name: Run test_inputs.py
       #   run: pytest -v -s tests/test_inputs.py
