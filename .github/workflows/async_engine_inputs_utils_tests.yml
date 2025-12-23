@@ -102,17 +102,22 @@ jobs:
           uv venv
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
-      # - name: Install dependencies and build vLLM
-      #   run: |
-      #     uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
-      #     uv pip install -e . -vvv
-      #   env:
-      #     CMAKE_BUILD_PARALLEL_LEVEL: 4
+      - name: Install dependencies and build vLLM
+        run: |
+          uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          uv pip install -e . -vvv
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
 
-      # - name: Verify installation
-      #   shell: bash
-      #   run: |
-      #     python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
+      - name: Verify installation
+        shell: bash
+        run: |
+          python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
+      
+      - name: GPU Usage Check / Verification
+        run: |
+          source .github/workflows/scripts/gpu_check.sh
+          wait_for_gpu
 
       - name: Run lazy imports test
         run: python3 tests/standalone_tests/lazy_imports.py
@@ -142,22 +147,3 @@ jobs:
           pytest tests/transformers_utils
         # 可选：单个测试失败不终止，便于查看所有失败用例
         continue-on-error: true
-
-      - name: 收集测试失败日志（增强可排查性）
-        if: failure()  # 仅测试失败时执行
-        run: |
-          echo "===== 测试失败详情 ====="
-          # 打印pytest缓存的失败信息（如有）
-          cat .pytest_cache/v/cache/lastfailed || echo "无失败缓存"
-        continue-on-error: true
-
-      - name: 上传测试日志（可选）
-        if: always()  # 无论成败都上传
-        uses: actions/upload-artifact@v4.3.1
-        with:
-          name: amd-test-logs-${{ github.run_id }}
-          path: |
-            pytest-*.log  # 如有pytest日志文件
-            /tmp/*.log    # 如有临时日志
-          retention-days: 3
-          if-no-files-found: warn
