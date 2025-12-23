@@ -95,7 +95,7 @@ jobs:
         timeout-minutes: 2
         run: |
           echo "===== Validate Critical Files ====="
-          if [ ! -f "${{ github.workspace }}/requirements/nightly_torch_test.txt" ]; then
+          if [ ! -f "./requirements/nightly_torch_test.txt" ]; then
             echo "❌ Error: nightly_torch_test.txt not found!"
             exit 1
           fi
