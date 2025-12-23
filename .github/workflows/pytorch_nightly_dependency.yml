@@ -126,17 +126,17 @@ jobs:
 
       - name: Pytorch Nightly Dependency Override Check
         id: dependency-check
-        working-directory: ./tests
+        shell: bash
         run: |
           echo "PWD: $PWD"
           source .github/workflows/scripts/gpu_check.sh
           wait_for_gpu
 
           echo "===== Script Content ====="
-          cat standalone_tests/pytorch_nightly_dependency.sh
+          cat ./tests/standalone_tests/pytorch_nightly_dependency.sh
 
           # 执行检查脚本, 同时输出到日志文件和控制台 (tee双向输出)
-          bash standalone_tests/pytorch_nightly_dependency.sh 2>&1 | tee ${{ env.LOG_DIR }}/dependency_check.log
+          bash ./tests/standalone_tests/pytorch_nightly_dependency.sh 2>&1 | tee ${{ env.LOG_DIR }}/dependency_check.log
           SCRIPT_EXIT_CODE=${PIPESTATUS[0]}
 
           echo "===== 检查完成 at $(date) ====="
@@ -153,7 +153,7 @@ jobs:
           name: pytorch-nightly-deps-log-${{ github.run_id }}-${{ env.SHORT_SHA }}
           path: |
             ${{ env.LOG_DIR }}/
-            ${{ github.workspace }}/requirements/nightly_torch_test.txt  # 附带依赖文件，便于复现
+            ./requirements/nightly_torch_test.txt  # 附带依赖文件，便于复现
             ${{ env.SCRIPT_PATH}}  # 附带执行脚本，便于复现
           retention-days: 7  # 日志保留7天
           if-no-files-found: error  # 无日志文件时标记错误（关键文件缺失需关注）
