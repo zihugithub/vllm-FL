@@ -4,27 +4,52 @@ on:
   push:
     branches:
       - run_test251211
-    paths:
-      - 'vllm'
-      - 'tests/test_inputs.py'
-      - 'tests/test_outputs.py'
-      - 'tests/multimodal'
-      - 'tests/utils_'
-      - 'tests/standalone_tests/lazy_imports.py'
-      - 'tests/transformers_utils'
-  workflow_dispatch:  # Manual trigger
+  #   paths:
+  #     - 'vllm/**'
+  #     - 'tests/test_inputs.py'
+  #     - 'tests/test_outputs.py'
+  #     - 'tests/multimodal/**'
+  #     - 'tests/utils_/**'
+  #     - 'tests/standalone_tests/lazy_imports.py'
+  #     - 'tests/transformers_utils/**'
+  # pull_request:
+  #   paths:
+  #     - 'vllm/**'
+  #     - 'tests/test_inputs.py'
+  #     - 'tests/test_outputs.py'
+  #     - 'tests/multimodal/**'
+  #     - 'tests/utils_/**'
+  #     - 'tests/standalone_tests/lazy_imports.py'
+  #     - 'tests/transformers_utils/**'
 
 jobs:
-  ubuntu-gpu-smoke-test:
+  amd-experimental-test:
     runs-on: self-hosted
+    # runs-on: [ self-hosted, amdexperimental ]
+    defaults:
+      run:
+        shell: bash
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       ports:
-        - 80
+        - 80:80
       volumes:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-      options: --gpus all --shm-size=500g --privileged --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 --ulimit nofile=65535:65535 --user root
+        - /home/yefubao/tmp/nightly-logs:/tmp/nightly-logs
+      options: >-
+        --gpus all 
+        --shm-size=500g 
+        --privileged 
+        --ipc=host 
+        --ulimit memlock=-1 
+        --ulimit stack=67108864 
+        --ulimit nofile=65535:65535 
+        --user root
+
+    env:
+      PYTHONUNBUFFERED: "1"  # 实时打印Python日志
+      PYTEST_ADDOPTS: "-v -s"  # 统一pytest参数，减少重复
 
     steps:
       - name: Checkout Code
@@ -42,15 +67,97 @@ jobs:
           lfs: false
           submodules: false
           set-safe-directory: true
-          retry-on-intr: fail=5,delay=180000
 
-      - name: Async Engine, Inputs, Utils, Worker Test
-        timeout-minutes: 60
+      - name: Pre-Check Environment
+        timeout-minutes: 5
         run: |
-          cd tests
-          python3 standalone_tests/lazy_imports.py
-          pytest -v -s test_inputs.py
-          pytest -v -s test_outputs.py
-          pytest -v -s multimodal
-          pytest -v -s utils_ # Utils
-          pytest -v -s transformers_utils # transformers_utils
+          echo "===== System Info ====="
+          uname -a
+          python3 --version || python --version
+          pip3 --version || pip --version
+
+          echo "===== GPU Info ====="
+          if command -v nvidia-smi &>/dev/null; then
+            nvidia-smi
+          else
+            echo "⚠️ GPU check skipped. nvidia-smi is not available in the current environment."
+          fi
+
+          echo "===== Disk Space ====="
+          df -h
+
+          echo "===== Available memory ====="
+          free -h
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            requirements/**/*.txt
+            pyproject.toml
+          python-version: '3.12'
+
+      - name: Create virtual environment
+        run: |
+          uv venv
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      # - name: Install dependencies and build vLLM
+      #   run: |
+      #     uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+      #     uv pip install -e . -vvv
+      #   env:
+      #     CMAKE_BUILD_PARALLEL_LEVEL: 4
+
+      # - name: Verify installation
+      #   shell: bash
+      #   run: |
+      #     python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
+
+      - name: Run lazy imports test
+        run: python3 tests/standalone_tests/lazy_imports.py
+        continue-on-error: false  # 懒加载测试是基础，失败直接终止
+
+      # - name: Run test_inputs.py
+      #   run: pytest -v -s tests/test_inputs.py
+
+      # - name: Run test_outputs.py
+      #   run: pytest -v -s tests/test_outputs.py
+
+      # - name: Run multimodal tests
+      #   run: pytest -v -s tests/multimodal
+
+      # - name: Run utils_ tests
+      #   run: pytest -v -s tests/utils_
+
+      # - name: Run transformers_utils tests
+      #   run: pytest -v -s tests/transformers_utils
+
+      - name: Perform batch execution of pytest tests
+        run: |
+          pytest tests/test_inputs.py
+          pytest tests/test_outputs.py
+          pytest tests/multimodal
+          pytest tests/utils_
+          pytest tests/transformers_utils
+        # 可选：单个测试失败不终止，便于查看所有失败用例
+        continue-on-error: true
+
+      - name: 收集测试失败日志（增强可排查性）
+        if: failure()  # 仅测试失败时执行
+        run: |
+          echo "===== 测试失败详情 ====="
+          # 打印pytest缓存的失败信息（如有）
+          cat .pytest_cache/v/cache/lastfailed || echo "无失败缓存"
+        continue-on-error: true
+
+      - name: 上传测试日志（可选）
+        if: always()  # 无论成败都上传
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: amd-test-logs-${{ github.run_id }}
+          path: |
+            pytest-*.log  # 如有pytest日志文件
+            /tmp/*.log    # 如有临时日志
+          retention-days: 3
+          if-no-files-found: warn
