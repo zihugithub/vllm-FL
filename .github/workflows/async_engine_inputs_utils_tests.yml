@@ -108,7 +108,11 @@ jobs:
           cache-dependency-glob: |
             requirements/**/*.txt
             pyproject.toml
-          python-version: '3.12'
+          # python-version: '3.12'
+          # 明确使用系统Python，不自动安装
+          python-version: system
+          # 禁用uv的虚拟环境自动创建
+          venv: false
 
       - name: Create virtual environment
         run: |
@@ -142,8 +146,6 @@ jobs:
           python3 tests/standalone_tests/lazy_imports.py
           # /usr/bin/python3
         continue-on-error: false  # 懒加载测试是基础，失败直接终止
-
-
 
       # - name: Run test_inputs.py
       #   run: pytest -v -s tests/test_inputs.py
