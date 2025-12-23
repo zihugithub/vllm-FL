@@ -61,7 +61,6 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"  # 实时打印Python日志
       PYTEST_ADDOPTS: "-v -s"  # 统一pytest参数，减少重复
-      UV_PYTHON: /usr/bin/python3
 
     steps:
       - name: Checkout Code
@@ -103,20 +102,20 @@ jobs:
 
           echo "python3_path: $(which python3)"
 
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: |
-            requirements/**/*.txt
-            pyproject.toml
-          python-version: '3.12'
+      # - uses: astral-sh/setup-uv@v7
+      #   with:
+      #     enable-cache: true
+      #     cache-dependency-glob: |
+      #       requirements/**/*.txt
+      #       pyproject.toml
+      #     python-version: '3.12'
 
-      - name: Create virtual environment
-        run: |
-          uv venv
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
-          # # 重新安装vLLM (复用编译产物, 不会重新编译)
-          # uv pip install -e . -vvv
+      # - name: Create virtual environment
+      #   run: |
+      #     uv venv
+      #     echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+      #     # # 重新安装vLLM (复用编译产物, 不会重新编译)
+      #     # uv pip install -e . -vvv
 
       # - name: Install dependencies and build vLLM
       #   run: |
@@ -138,7 +137,6 @@ jobs:
       - name: Run lazy imports test
         run: |
           echo "python3_path0: $(which python3)"
-          deactivate || true
           echo "python3_path1: $(which python3)"
           python3 tests/standalone_tests/lazy_imports.py
           # /usr/bin/python3
