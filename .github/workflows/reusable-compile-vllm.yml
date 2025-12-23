@@ -1,0 +1,124 @@
+# .github/workflows/reusable-compile-vllm.yml
+name: Reusable - Compile vLLM with sccache
+
+# 定义为可复用工作流
+on:
+  workflow_call:
+    # 定义输入参数（可根据需要扩展）
+    inputs:
+      python-version:
+        description: "Python version to use for compilation"
+        type: string
+        default: "3.12"
+      cache-dir:
+        description: "Directory for sccache cache"
+        type: string
+        default: "/root/.cache/sccache"
+      cmake-parallel-level:
+        description: "CMake build parallel level"
+        type: number
+        default: 4
+    # 定义输出（可选，供主工作流使用）
+    outputs:
+      vllm-version:
+        description: "Installed vLLM version"
+        value: ${{ jobs.compile-vllm.outputs.vllm-version }}
+
+jobs:
+  compile-vllm:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
+      volumes:
+        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+        - ${{ inputs.cache-dir }}:/root/.cache/sccache  # 动态挂载缓存目录
+      options: >-
+        --gpus all
+        --shm-size=500g
+        --privileged
+        --ipc=host
+        --ulimit memlock=-1
+        --ulimit stack=67108864
+        --ulimit nofile=65535:65535
+        --user root
+    env:
+      # SCCache 核心配置
+      SCCACHE_DIR: ${{ inputs.cache-dir }}
+      SCCACHE_CACHE_SIZE: 20G
+      SCCACHE_COMPRESS: "true"
+      SCCACHE_LOG: info
+      # 编译器配置
+      CC: sccache gcc
+      CXX: sccache g++
+      CUDA_NVCC: sccache nvcc
+      PYTHONUNBUFFERED: "1"
+    outputs:
+      vllm-version: ${{ steps.verify.outputs.vllm-version }}  # 输出vLLM版本
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          ssh-strict: true
+          ssh-user: git
+          persist-credentials: true
+          clean: true
+          sparse-checkout-cone-mode: true
+          fetch-tags: false
+          show-progress: true
+          lfs: false
+          submodules: false
+          set-safe-directory: true
+
+      - name: Install sccache
+        run: |
+          if ! command -v sccache &>/dev/null; then
+            wget https://github.com/mozilla/sccache/releases/download/v0.5.4/sccache-v0.5.4-x86_64-unknown-linux-musl.tar.gz -O /tmp/sccache.tar.gz
+            tar -xzf /tmp/sccache.tar.gz -C /tmp
+            mv /tmp/sccache-v0.5.4-x86_64-unknown-linux-musl/sccache /usr/local/bin/
+            chmod +x /usr/local/bin/sccache
+            rm -rf /tmp/sccache.tar.gz /tmp/sccache-v0.5.4-x86_64-unknown-linux-musl
+          fi
+          sccache --version
+          sccache --clean
+
+      - name: Setup uv and Python
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            requirements/**/*.txt
+            pyproject.toml
+          python-version: ${{ inputs.python-version }}
+
+      - name: Create virtual environment
+        run: |
+          uv venv
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Compile vLLM with sccache
+        run: |
+          sccache --start-server
+          uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          uv pip install -e . -vvv
+          sccache --show-stats
+          sccache --stop-server
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: ${{ inputs.cmake-parallel-level }}
+          NVCC: sccache nvcc
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+          CMAKE_CUDA_COMPILER_LAUNCHER: sccache
+
+      - name: Verify vLLM installation
+        id: verify
+        run: |
+          VLLM_VERSION=$(python3 -c "import vllm; print(vllm.__version__)")
+          echo "vllm-version=$VLLM_VERSION" >> $GITHUB_OUTPUT
+          echo "vLLM version: $VLLM_VERSION"
