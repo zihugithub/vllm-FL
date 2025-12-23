@@ -22,6 +22,10 @@ on:
   #     - 'tests/standalone_tests/lazy_imports.py'
   #     - 'tests/transformers_utils/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
+  cancel-in-progress: true
+
 jobs:
   amd-experimental-test:
     runs-on: self-hosted
@@ -36,7 +40,6 @@ jobs:
       volumes:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-        - /home/yefubao/tmp/nightly-logs:/tmp/nightly-logs
       options: >-
         --gpus all 
         --shm-size=500g 
@@ -112,15 +115,17 @@ jobs:
       - name: Verify installation
         shell: bash
         run: |
-          python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
-      
+          python3 -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
+
       - name: GPU Usage Check / Verification
         run: |
           source .github/workflows/scripts/gpu_check.sh
           wait_for_gpu
 
       - name: Run lazy imports test
-        run: python3 tests/standalone_tests/lazy_imports.py
+        run: |
+          deactivate || true
+          python3 tests/standalone_tests/lazy_imports.py
         continue-on-error: false  # 懒加载测试是基础，失败直接终止
 
       # - name: Run test_inputs.py
