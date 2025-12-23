@@ -101,6 +101,7 @@ jobs:
           fi
 
           if [ ! -f "${{ env.SCRIPT_PATH}}" ]; then
+            echo "SCRIPT_PATH: ${{ env.SCRIPT_PATH}}"
             echo "❌ Error: pytorch_nightly_dependency.sh not found!"
             exit 1
           fi
