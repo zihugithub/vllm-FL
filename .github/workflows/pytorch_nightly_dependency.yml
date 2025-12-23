@@ -114,6 +114,7 @@ jobs:
 
       - name: Generate compatible short hashes
         id: gen-sha
+        shell: bash
         run: |
           SHORT_SHA=${{ github.sha }}
           if [ -z "$SHORT_SHA" ]; then
@@ -125,8 +126,9 @@ jobs:
 
       - name: Pytorch Nightly Dependency Override Check
         id: dependency-check
-        working-directory: ${{ github.workspace }}/tests
+        working-directory: ./tests
         run: |
+          echo "PWD: $PWD"
           source .github/workflows/scripts/gpu_check.sh
           wait_for_gpu
 
