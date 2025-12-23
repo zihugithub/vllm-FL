@@ -19,7 +19,7 @@ env:
   PIP_NO_CACHE_DIR: "0"          # 启用pip缓存，加速重复测试
   TORCH_NIGHTLY: "true"          # 标记使用PyTorch夜间版
   LOG_DIR: "/tmp/nightly-logs"   # 统一日志目录变量，便于维护
-  SCRIPT_PATH: "${{ github.workspace }}/tests/standalone_tests/pytorch_nightly_dependency.sh"  # 脚本路径变量
+  SCRIPT_PATH: "./tests/standalone_tests/pytorch_nightly_dependency.sh"  # 脚本路径变量
 
 jobs:
   pytorch-nightly-dependency:
@@ -36,7 +36,7 @@ jobs:
       volumes:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-        - /tmp/nightly-logs:/tmp/nightly-logs
+        - /home/yefubao/tmp/nightly-logs:/tmp/nightly-logs
       options: >-
         --gpus all 
         --shm-size=500g 
