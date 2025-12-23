@@ -117,7 +117,7 @@ jobs:
 
       - name: Install dependencies and build vLLM
         run: |
-          pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          pip install -r requirements/cuda.txt
           pip install -e . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
