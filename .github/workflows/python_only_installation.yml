@@ -44,14 +44,6 @@ jobs:
         --ulimit stack=67108864 
         --ulimit nofile=65535:65535 
         --user root
-    
-      # 新增：容器健康检查，提前发现环境问题
-      healthcheck:
-        test: ["CMD", "nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]
-        interval: 10s
-        timeout: 5s
-        retries: 3
-        start_period: 20s
 
     env:
       PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，实时打印安装日志
