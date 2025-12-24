@@ -98,7 +98,7 @@ jobs:
           echo "===== Available memory ====="
           free -h
 
-          echo "===== 挂载目录检查 ====="
+          # ===== 挂载目录检查 =====
           [ -d "/home/gitlab-runner/tokenizers" ] || echo "⚠️ tokenizers目录未挂载"
           [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data目录未挂载"
           [ -d "/root/.cache/pip" ] || mkdir -p /root/.cache/pip
@@ -114,22 +114,18 @@ jobs:
           LOG_FILE="/var/log/vllm-install/python_only_compile_$(date +%Y%m%d_%H%M%S).log"
           
           # 执行脚本并记录完整日志
-          bash tests/standalone_tests/python_only_compile.sh > "$LOG_FILE" 2>&1
+          bash tests/standalone_tests/python_only_compile.sh | tee "$LOG_FILE"
 
-          # 实时打印日志（兼顾实时性和持久化）
-          tail -f "$LOG_FILE" &
-          TAIL_PID=$!
-          wait $! || (echo "❌ 安装脚本执行失败"; cat "$LOG_FILE"; kill $TAIL_PID; exit 1)
-
-          echo "===== 安装脚本执行成功 [$(date)] ====="
-          # 新增：验证安装结果
           python3 -c "import vllm; print(f'✅ vLLM安装成功，版本: {vllm.__version__}')" || {
             echo "❌ vLLM导入失败，日志内容:"
             cat "$LOG_FILE"
             exit 1
           }
-      - name: Post-Install Verification (新增)
-        if: always()  # 即使安装失败也执行，保留调试信息
+          echo "===== 安装脚本执行成功 [$(date)] ====="
+
+
+      - name: Post-Install Verification
+        if: always()
         run: |
           echo "===== 安装后验证信息 ====="
           # 打印关键日志片段
