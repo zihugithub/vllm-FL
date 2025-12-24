@@ -27,13 +27,10 @@ jobs:
         shell: bash
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
-      # ports:
-      #   - 80:80
       volumes:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
         - /home/yefubao/tmp/pip-cache:/root/.cache/pip
-        - /home/yefubao/tmp/vllm-install-logs:/var/log/vllm-install
       options: >-
         --gpus all 
         --shm-size=500g 
@@ -45,13 +42,12 @@ jobs:
         --user root
 
     env:
-      PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，实时打印安装日志
-      PIP_DEFAULT_TIMEOUT: "180"     # 延长pip超时，避免大依赖包下载失败
-      PIP_NO_CACHE_DIR: "0"          # 启用pip缓存（配合挂载的缓存目录）
-      PIP_PROGRESS_BAR: "on"         # 新增：显示pip下载进度
-      LC_ALL: "C.UTF-8"              # 新增：统一字符编码，避免locale问题
+      PYTHONUNBUFFERED: "1"
+      PIP_DEFAULT_TIMEOUT: "180"
+      PIP_NO_CACHE_DIR: "0"
+      PIP_PROGRESS_BAR: "on"
+      LC_ALL: "C.UTF-8"
       LANG: "C.UTF-8"
-      # 新增：编译相关优化，加速安装
       CMAKE_BUILD_PARALLEL_LEVEL: "8"
       MAX_JOBS: "8"
 
@@ -71,12 +67,12 @@ jobs:
           lfs: false
           submodules: false
           set-safe-directory: true
-          fetch-depth: 10 # 新增：深度拉取，避免浅克隆导致的脚本执行问题
+          fetch-depth: 10
 
       - name: Pre-Check Environment
         timeout-minutes: 5
         run: |
-          set -euo pipefail  # 新增：严格模式，任何错误立即终止
+          set -euo pipefail
           echo "===== System Info ====="
           uname -a
           python3 --version || (echo "❌ python3 not found"; exit 1)
@@ -98,52 +94,56 @@ jobs:
           echo "===== Available memory ====="
           free -h
 
-          # ===== 挂载目录检查 =====
-          [ -d "/home/gitlab-runner/tokenizers" ] || echo "⚠️ tokenizers目录未挂载"
-          [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data目录未挂载"
+          # ===== Mount Directory Check =====
+          [ -d "/home/gitlab-runner/tokenizers" ] || echo "⚠️ tokenizers directory not mounted"
+          [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data directory not mounted"
           [ -d "/root/.cache/pip" ] || mkdir -p /root/.cache/pip
+
           [ -d "/var/log/vllm-install" ] || mkdir -p /var/log/vllm-install
 
       - name: Python-only Installation Test
-        # timeout-minutes: 40
+        timeout-minutes: 40
+        id: python_only_install
         working-directory: tests
         run: |
           set -euo pipefail
-          echo "===== 开始执行Python-only安装脚本 [$(date)] ====="
-          # 定义日志路径，方便后续排查
+          echo "===== Starting execution of Python-only installation script [$(date)] ====="
+          # Define log path for subsequent troubleshooting
           LOG_FILE="/var/log/vllm-install/python_only_compile_$(date +%Y%m%d_%H%M%S).log"
-          
-          # 执行脚本并记录完整日志
+
+          # Execute the script and record complete logs
           bash standalone_tests/python_only_compile.sh | tee "$LOG_FILE"
 
-          python3 -c "import vllm; print(f'✅ vLLM安装成功，版本: {vllm.__version__}')" || {
-            echo "❌ vLLM导入失败，日志内容:"
+          python3 -c "import vllm; print(f'✅ vLLM installed successfully, version: {vllm.__version__}')" || {
+            echo "❌ Failed to import vLLM, log content:"
             cat "$LOG_FILE"
             exit 1
           }
-          echo "===== 安装脚本执行成功 [$(date)] ====="
+
+          echo "===== Installation script executed successfully [$(date)] ====="
 
 
       - name: Post-Install Verification
         if: always()
         run: |
-          echo "===== 安装后验证信息 ====="
-          # 打印关键日志片段
+          echo "===== Post-Installation Verification Information ====="
+          # Print key log snippets
           LOG_DIR="/var/log/vllm-install"
           if [ -f "$LOG_DIR"/*.log ]; then
-            echo "📜 最后100行安装日志:"
+            echo "📜 Last 100 lines of installation logs:"
             tail -100 "$LOG_DIR"/*.log
           fi
-          
-          # 打印已安装的包列表
-          echo "📦 已安装的Python包 (vllm相关):"
+
+          # Print list of installed packages
+          echo "📦 Installed Python packages (vllm-related):"
           pip3 list | grep -E "(vllm|torch|cuda)" || true
 
-      - name: Upload Installation Logs (新增)
-        if: always()  # 失败时也上传日志
+      - name: Upload Installation Logs
+        if: ${{ steps.python_only_install.outcome == "failure" }}
         uses: actions/upload-artifact@v4
         with:
           name: vllm-install-logs-${{ github.run_id }}
           path: /var/log/vllm-install/
-          retention-days: 7  # 日志保留7天，避免存储溢出
+          retention-days: 7
           if-no-files-found: warn
+        continue-on-error: true
