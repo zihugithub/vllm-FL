@@ -19,13 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ubuntu-gpu-smoke-test:
+  python-only-install-test:
     runs-on: self-hosted
     # runs-on: [ self-hosted, amdexperimental ]
     defaults:
       run:
         shell: bash
-        working-directory: ${{ github.workspace }} # 统一工作目录为仓库根目录，避免路径混乱
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       # ports:
@@ -71,8 +70,7 @@ jobs:
           show-progress: true
           lfs: false
           submodules: false
-          # set-safe-directory: true
-          set-safe-directory: ${{ github.workspace }}
+          set-safe-directory: true
           fetch-depth: 10 # 新增：深度拉取，避免浅克隆导致的脚本执行问题
 
       - name: Pre-Check Environment
