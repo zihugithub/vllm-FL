@@ -34,6 +34,7 @@ jobs:
         - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
         - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
         - /home/yefubao/tmp/pip-cache:/root/.cache/pip
+        - /home/yefubao/tmp/vllm-install-logs:/var/log/vllm-install
       options: >-
         --gpus all 
         --shm-size=500g 
@@ -43,11 +44,25 @@ jobs:
         --ulimit stack=67108864 
         --ulimit nofile=65535:65535 
         --user root
+    
+      # 新增：容器健康检查，提前发现环境问题
+      healthcheck:
+        test: ["CMD", "nvidia-smi", "--query-gpu=name", "--format=csv,noheader"]
+        interval: 10s
+        timeout: 5s
+        retries: 3
+        start_period: 20s
 
     env:
       PYTHONUNBUFFERED: "1"          # 禁用Python输出缓冲，实时打印安装日志
       PIP_DEFAULT_TIMEOUT: "180"     # 延长pip超时，避免大依赖包下载失败
       PIP_NO_CACHE_DIR: "0"          # 启用pip缓存（配合挂载的缓存目录）
+      PIP_PROGRESS_BAR: "on"         # 新增：显示pip下载进度
+      LC_ALL: "C.UTF-8"              # 新增：统一字符编码，避免locale问题
+      LANG: "C.UTF-8"
+      # 新增：编译相关优化，加速安装
+      CMAKE_BUILD_PARALLEL_LEVEL: "8"
+      MAX_JOBS: "8"
 
     steps:
       - name: Checkout Code
@@ -66,23 +81,26 @@ jobs:
           submodules: false
           # set-safe-directory: true
           set-safe-directory: ${{ github.workspace }}
+          fetch-depth: 10 # 新增：深度拉取，避免浅克隆导致的脚本执行问题
 
       - name: Pre-Check Environment
         timeout-minutes: 5
         run: |
-          set -e
+          set -euo pipefail  # 新增：严格模式，任何错误立即终止
           echo "===== System Info ====="
           uname -a
-          python3 --version || python --version
-          pip3 --version || pip --version
+          python3 --version || (echo "❌ python3 not found"; exit 1)
+          pip3 --version || (echo "❌ pip3 not found"; exit 1)
 
           echo "===== GPU Info ====="
           if command -v nvidia-smi &>/dev/null; then
-            nvidia-smi
+            nvidia-smi --query-gpu=index,name,memory.total,utilization.gpu --format=csv
           else
             echo "⚠️ GPU check skipped. nvidia-smi is not available in the current environment."
             exit 1
           fi
+
+          nvcc --version || echo "⚠️ nvcc not found (non-fatal for python-only install)"
 
           echo "===== Disk Space ====="
           df -h
@@ -94,10 +112,52 @@ jobs:
           [ -d "/home/gitlab-runner/tokenizers" ] || echo "⚠️ tokenizers目录未挂载"
           [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data目录未挂载"
           [ -d "/root/.cache/pip" ] || mkdir -p /root/.cache/pip
+          [ -d "/var/log/vllm-install" ] || mkdir -p /var/log/vllm-install
 
       - name: Python-only Installation Test
         # timeout-minutes: 40
         working-directory: tests
         run: |
-          echo "===== 开始执行安装脚本 ====="
-          bash standalone_tests/python_only_compile.sh
+          set -euo pipefail
+          echo "===== 开始执行Python-only安装脚本 [$(date)] ====="
+          # 定义日志路径，方便后续排查
+          LOG_FILE="/var/log/vllm-install/python_only_compile_$(date +%Y%m%d_%H%M%S).log"
+          
+          # 执行脚本并记录完整日志
+          bash tests/standalone_tests/python_only_compile.sh > "$LOG_FILE" 2>&1
+
+          # 实时打印日志（兼顾实时性和持久化）
+          tail -f "$LOG_FILE" &
+          TAIL_PID=$!
+          wait $! || (echo "❌ 安装脚本执行失败"; cat "$LOG_FILE"; kill $TAIL_PID; exit 1)
+
+          echo "===== 安装脚本执行成功 [$(date)] ====="
+          # 新增：验证安装结果
+          python3 -c "import vllm; print(f'✅ vLLM安装成功，版本: {vllm.__version__}')" || {
+            echo "❌ vLLM导入失败，日志内容:"
+            cat "$LOG_FILE"
+            exit 1
+          }
+      - name: Post-Install Verification (新增)
+        if: always()  # 即使安装失败也执行，保留调试信息
+        run: |
+          echo "===== 安装后验证信息 ====="
+          # 打印关键日志片段
+          LOG_DIR="/var/log/vllm-install"
+          if [ -f "$LOG_DIR"/*.log ]; then
+            echo "📜 最后100行安装日志:"
+            tail -100 "$LOG_DIR"/*.log
+          fi
+          
+          # 打印已安装的包列表
+          echo "📦 已安装的Python包 (vllm相关):"
+          pip3 list | grep -E "(vllm|torch|cuda)" || true
+
+      - name: Upload Installation Logs (新增)
+        if: always()  # 失败时也上传日志
+        uses: actions/upload-artifact@v4
+        with:
+          name: vllm-install-logs-${{ github.run_id }}
+          path: /var/log/vllm-install/
+          retention-days: 7  # 日志保留7天，避免存储溢出
+          if-no-files-found: warn
