@@ -165,7 +165,7 @@ jobs:
           echo "python_only_install_result: ${{ steps.python_only_install.outcome }}"
 
       - name: Upload Installation Logs
-        if: ${{ steps.python_only_install.outcome }} == 'failure'
+        if: steps.python_only_install.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: vllm-install-logs-${{ github.run_id }}
