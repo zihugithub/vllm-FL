@@ -101,6 +101,31 @@ jobs:
 
           [ -d "/var/log/vllm-install" ] || mkdir -p /var/log/vllm-install
 
+          echo "===== 验证jobs级变量 ====="
+          # 验证 PYTHONUNBUFFERED
+          echo -n "PYTHONUNBUFFERED function: "
+          python3 -c "import sys; print('生效' if sys.stdout.line_buffering else '未生效')"
+
+          # 验证 PIP 相关变量
+          echo -n "PIP_DEFAULT_TIMEOUT function: "
+          pip3 config get global.timeout || echo "未生效（pip版本过低？）"
+          echo -n "PIP_NO_CACHE_DIR function: "
+          pip3 config get global.no-cache-dir || echo "未生效"
+          echo -n "PIP_PROGRESS_BAR function: "
+          pip3 config get global.progress-bar || echo "未生效"
+
+          # 验证 locale 变量
+          echo -e "\nLocale settings:"
+          locale | grep -E "(LC_ALL|LANG)"
+
+          # 验证 CMAKE 并行变量
+          echo -n "CMAKE_BUILD_PARALLEL_LEVEL: "
+          if [ -n "$CMAKE_BUILD_PARALLEL_LEVEL" ]; then
+            echo "已设置为 $CMAKE_BUILD_PARALLEL_LEVEL（编译时会并行执行）"
+          else
+            echo "未设置"
+          fi
+
       - name: Python-only Installation Test
         timeout-minutes: 40
         id: python_only_install
