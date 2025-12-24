@@ -39,6 +39,8 @@ jobs:
         --user root
 
     env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "-v -s"
       VLLM_WORKER_MULTIPROC_METHOD: spawn
       CMAKE_BUILD_PARALLEL_LEVEL: "8"
       MAX_JOBS: "8"
