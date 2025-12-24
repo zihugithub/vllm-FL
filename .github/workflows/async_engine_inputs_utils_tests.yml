@@ -3,41 +3,34 @@ name: Async Engine, Inputs, Utils, Worker Test
 on:
   push:
     branches:
-      - run_test251211
-  #   paths:
-  #     - 'vllm/**'
-  #     - 'tests/test_inputs.py'
-  #     - 'tests/test_outputs.py'
-  #     - 'tests/multimodal/**'
-  #     - 'tests/utils_/**'
-  #     - 'tests/standalone_tests/lazy_imports.py'
-  #     - 'tests/transformers_utils/**'
-  # pull_request:
-  #   paths:
-  #     - 'vllm/**'
-  #     - 'tests/test_inputs.py'
-  #     - 'tests/test_outputs.py'
-  #     - 'tests/multimodal/**'
-  #     - 'tests/utils_/**'
-  #     - 'tests/standalone_tests/lazy_imports.py'
-  #     - 'tests/transformers_utils/**'
+      - main
+    paths:
+      - 'vllm/**'
+      - 'tests/test_inputs.py'
+      - 'tests/test_outputs.py'
+      - 'tests/multimodal/**'
+      - 'tests/utils_/**'
+      - 'tests/standalone_tests/lazy_imports.py'
+      - 'tests/transformers_utils/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'vllm/**'
+      - 'tests/test_inputs.py'
+      - 'tests/test_outputs.py'
+      - 'tests/multimodal/**'
+      - 'tests/utils_/**'
+      - 'tests/standalone_tests/lazy_imports.py'
+      - 'tests/transformers_utils/**'
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
+  cancel-in-progress: true
 
 jobs:
-  compile-vllm:
-    uses: ./.github/workflows/reusable-compile-vllm.yml
-    with:
-      python-version: "3.12"
-      cache-dir: "/home/yefubao/tmp/sccache"
-      cmake-parallel-level: 4
-
   amd-experimental-test:
-    needs: compile-vllm
-    runs-on: self-hosted
-    # runs-on: [ self-hosted, amdexperimental ]
+    runs-on: [ self-hosted, amdexperimental ]
     defaults:
       run:
         shell: bash
@@ -59,8 +52,8 @@ jobs:
         --user root
 
     env:
-      PYTHONUNBUFFERED: "1"  # 实时打印Python日志
-      PYTEST_ADDOPTS: "-v -s"  # 统一pytest参数，减少重复
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "-v -s"
 
     steps:
       - name: Checkout Code
@@ -120,29 +113,19 @@ jobs:
       - name: Run lazy imports test
         run: |
           python3 tests/standalone_tests/lazy_imports.py
-        continue-on-error: false  # 懒加载测试是基础，失败直接终止
+        continue-on-error: false
 
-      # - name: Run test_inputs.py
-      #   run: pytest -v -s tests/test_inputs.py
+      - name: Run test_inputs.py
+        run: pytest tests/test_inputs.py
 
-      # - name: Run test_outputs.py
-      #   run: pytest -v -s tests/test_outputs.py
+      - name: Run test_outputs.py
+        run: pytest tests/test_outputs.py
 
-      # - name: Run multimodal tests
-      #   run: pytest -v -s tests/multimodal
+      - name: Run multimodal tests
+        run: pytest tests/multimodal
 
-      # - name: Run utils_ tests
-      #   run: pytest -v -s tests/utils_
+      - name: Run utils_ tests
+        run: pytest tests/utils_
 
-      # - name: Run transformers_utils tests
-      #   run: pytest -v -s tests/transformers_utils
-
-      - name: Perform batch execution of pytest tests
-        run: |
-          pytest tests/test_inputs.py
-          pytest tests/test_outputs.py
-          pytest tests/multimodal
-          pytest tests/utils_
-          pytest tests/transformers_utils
-        # 可选：单个测试失败不终止，便于查看所有失败用例
-        continue-on-error: true
+      - name: Run transformers_utils tests
+        run: pytest tests/transformers_utils
