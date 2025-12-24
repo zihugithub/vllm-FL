@@ -3,25 +3,24 @@ name: Python-only Installation Test
 on:
   push:
     branches:
-      - run_test251211
-    # paths:
-    #   - 'tests/standalone_tests/python_only_compile.sh'
-    #   - 'setup.py'
-  # pull_request:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'tests/standalone_tests/python_only_compile.sh'
-  #     - 'setup.py'
+      - main
+    paths:
+      - 'tests/standalone_tests/python_only_compile.sh'
+      - 'setup.py'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tests/standalone_tests/python_only_compile.sh'
+      - 'setup.py'
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
+  cancel-in-progress: true
 
 jobs:
   python-only-install-test:
-    runs-on: self-hosted
-    # runs-on: [ self-hosted, amdexperimental ]
+    runs-on: [ self-hosted, amdexperimental ]
     defaults:
       run:
         shell: bash

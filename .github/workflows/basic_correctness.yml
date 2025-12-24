@@ -1,18 +1,14 @@
+# Run this on each commit
+# whether to run this on vllm against the torch nightly pipeline
 name: Basic Correctness Test
 
 on:
   push:
-    branches: main
-      # - run_test251211
-    paths:
-      - 'vllm/**'
-      - 'tests/basic_correctness/**'
+    branches:
+      - run_test251211
   # pull_request:
   #   branches:
   #     - run_test251211
-  #   paths:
-  #     - 'vllm/**'
-  #     - 'tests/basic_correctness/**'
 
 # concurrency:
 #   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
@@ -44,12 +40,7 @@ jobs:
         --user root
 
     env:
-      PYTHONUNBUFFERED: "1"
-      PIP_DEFAULT_TIMEOUT: "180"
-      PIP_NO_CACHE_DIR: "0"
-      PIP_PROGRESS_BAR: "on"
-      LC_ALL: "C.UTF-8"
-      LANG: "C.UTF-8"
+      VLLM_WORKER_MULTIPROC_METHOD: spawn
       CMAKE_BUILD_PARALLEL_LEVEL: "8"
       MAX_JOBS: "8"
 
@@ -100,34 +91,12 @@ jobs:
           [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data directory not mounted"
           [ -d "/root/.cache/pip" ] || mkdir -p /root/.cache/pip
 
-          echo "===== 验证jobs级变量 ====="
-          # 验证 PYTHONUNBUFFERED
-          echo -n "PYTHONUNBUFFERED function: "
-          python3 -c "import sys; print('生效' if sys.stdout.line_buffering else '未生效')"
-
-          # 验证 PIP 相关变量
-          echo -n "PIP_DEFAULT_TIMEOUT function: "
-          pip3 config get global.timeout || echo "未生效（pip版本过低？）"
-          echo -n "PIP_NO_CACHE_DIR function: "
-          pip3 config get global.no-cache-dir || echo "未生效"
-          echo -n "PIP_PROGRESS_BAR function: "
-          pip3 config get global.progress-bar || echo "未生效"
-
-          # 验证 locale 变量
-          echo -e "\nLocale settings:"
-          locale | grep -E "(LC_ALL|LANG)"
-
-          # 验证 CMAKE 并行变量
-          echo -n "CMAKE_BUILD_PARALLEL_LEVEL: "
-          if [ -n "$CMAKE_BUILD_PARALLEL_LEVEL" ]; then
-            echo "已设置为 $CMAKE_BUILD_PARALLEL_LEVEL（编译时会并行执行）"
-          else
-            echo "未设置"
-          fi
-
       - name: Install dependencies and build vLLM
         run: |
-          pip install -r requirements/cuda.txt
+          # Install the torch-nightly dependency
+          bash tests/standalone_tests/pytorch_nightly_dependency.sh
+
+          # install vllm
           pip install -e . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
