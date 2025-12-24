@@ -3,7 +3,7 @@ name: Python-only Installation Test
 on:
   push:
     branches:
-      - main
+      - run_test251211
     # paths:
     #   - 'tests/standalone_tests/python_only_compile.sh'
     #   - 'setup.py'
