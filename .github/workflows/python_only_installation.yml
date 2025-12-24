@@ -139,7 +139,7 @@ jobs:
           pip3 list | grep -E "(vllm|torch|cuda)" || true
 
       - name: Upload Installation Logs
-        if: ${{ steps.python_only_install.outcome == "failure" }}
+        if: ${{ steps.python_only_install.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
         with:
           name: vllm-install-logs-${{ github.run_id }}
