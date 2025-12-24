@@ -162,6 +162,8 @@ jobs:
           echo "📦 Installed Python packages (vllm-related):"
           pip3 list | grep -E "(vllm|torch|cuda)" || true
 
+          echo "python_only_install_result: ${{ steps.python_only_install.outcome }}"
+
       - name: Upload Installation Logs
         if: ${{ steps.python_only_install.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
