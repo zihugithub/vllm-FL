@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   functional_test:
-    runs-on: self-hosted
+    runs-on: [self-hosted, ye_test]
     defaults:
       run:
         shell: bash
@@ -26,7 +26,6 @@ jobs:
           git config --global --add safe.directory .
 
       - name: Load Conda profile configuration (enable conda command)
-        working-directory: /__w/FlagScale/FlagScale
         run: |
           if [[ ! -f ".github/workflows/scripts/load_conda_profile.sh" ]]; then
             echo "Error: Conda load script not found!" >&2
