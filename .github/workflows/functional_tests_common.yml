@@ -19,8 +19,6 @@ jobs:
       ports:
         - 80
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-    env:
-        CONDA_PROFILE_SCRIPT: ${{ steps.load_conda.outputs.conda_profile_script }}
 
     steps:
       - name: Checkout code
@@ -66,8 +64,8 @@ jobs:
 
       - name: Install FlagScale training dependencies
         timeout-minutes: 5
-        # env:
-        #   CONDA_PROFILE_SCRIPT: ${{ steps.load_conda.outputs.conda_profile_script }}
+        env:
+          CONDA_PROFILE_SCRIPT: ${{ steps.load_conda.outputs.conda_profile_script }}
         run: |
           echo "📌 GitHub Actions default workspace: ${GITHUB_WORKSPACE}"
           source "${CONDA_PROFILE_SCRIPT}"
