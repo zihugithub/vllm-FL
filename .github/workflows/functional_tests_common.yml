@@ -38,19 +38,37 @@ jobs:
           set-safe-directory: true
 
       - name: Load Conda profile configuration (enable conda command)
+        id: load_conda 
         run: |
           if [[ ! -f ".github/workflows/scripts/load_conda_profile.sh" ]]; then
             echo "Error: Conda load script not found!" >&2
             exit 1
           fi
 
+          # 加载Conda配置脚本
           source .github/workflows/scripts/load_conda_profile.sh
+
+          # 调用函数获取有效Conda配置文件路径
+          CONDA_PROFILE_SCRIPT=$(find_conda_profile)
+
+          # 验证获取的路径是否有效，避免传递空值
+          if [[ -z "${CONDA_PROFILE_SCRIPT}" || ! ( -f "${CONDA_PROFILE_SCRIPT}" || -L "${CONDA_PROFILE_SCRIPT}" ) ]]; then
+            echo "Error: Failed to get valid CONDA_PROFILE_SCRIPT!" >&2
+            exit 1
+          fi
+
+          # 将变量输出到 GITHUB_OUTPUT
+          echo "conda_profile_script=${CONDA_PROFILE_SCRIPT}" >> "$GITHUB_OUTPUT"
+          echo "✅ Successfully exported CONDA_PROFILE_SCRIPT to GITHUB_OUTPUT: ${CONDA_PROFILE_SCRIPT}"
         timeout-minutes: 5
 
       - name: Install FlagScale training dependencies
         timeout-minutes: 5
+        env:
+          CONDA_PROFILE_SCRIPT: ${{ steps.load_conda.outputs.conda_profile_script }}
         run: |
           echo "📌 GitHub Actions default workspace: ${GITHUB_WORKSPACE}"
+          source "${CONDA_PROFILE_SCRIPT}"
 
           conda activate flagscale-train
           source .github/workflows/scripts/retry_functions.sh
