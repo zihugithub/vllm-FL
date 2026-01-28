@@ -41,6 +41,14 @@ jobs:
       - name:  Set up flash-attn for inference(robobrain2)
         timeout-minutes: 15
         working-directory: /__w/vllm-FL/vllm-FL
+        env:
+          SCCACHE_CPP2: 1
+          CUDA_CCACHE: 1
+          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_VERBOSE: 0
+          CMAKE_C_COMPILER_LAUNCHER: $(command -v sccache)
+          CMAKE_CXX_COMPILER_LAUNCHER: $(command -v sccache)
+          CMAKE_CUDA_COMPILER_LAUNCHER: $(command -v sccache)
         run: |
           CONDA_ENV='flagscale-inference'
           CONDA_PATH='/root/miniconda3'
