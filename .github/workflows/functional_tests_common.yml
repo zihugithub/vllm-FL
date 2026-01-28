@@ -68,22 +68,9 @@ jobs:
           CMAKE_C_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
           CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
           CMAKE_CUDA_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-        env:
-          SCCACHE_CPP2: 1
-          CUDA_CCACHE: 1
-          SCCACHE_VERBOSE: 0
-          SCCACHE_CACHE_SIZE: 20G
-          SCCACHE_DIR: /root/.cache/sccache
-          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-          CMAKE_CUDA_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
         run: |
           CONDA_ENV='flagscale-inference'
           CONDA_PATH='/root/miniconda3'
-
-          echo "CMAKE_C_COMPILER_LAUNCHER: ${CMAKE_C_COMPILER_LAUNCHER}"
-          echo "CMAKE_CXX_COMPILER_LAUNCHER: ${CMAKE_CXX_COMPILER_LAUNCHER}"
-          echo "CMAKE_CUDA_COMPILER_LAUNCHER: ${CMAKE_CUDA_COMPILER_LAUNCHER}"
 
           echo "CMAKE_C_COMPILER_LAUNCHER: ${CMAKE_C_COMPILER_LAUNCHER}"
           echo "CMAKE_CXX_COMPILER_LAUNCHER: ${CMAKE_CXX_COMPILER_LAUNCHER}"
