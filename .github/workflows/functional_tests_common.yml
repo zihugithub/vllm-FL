@@ -18,6 +18,8 @@ jobs:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
       ports:
         - 80
+      volumes:
+        - /home/flagscale_cicd/sccache:/root/.cache/sccache
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
 
     steps:
@@ -38,17 +40,44 @@ jobs:
           set-safe-directory: true
 
       
-      - name:  Set up flash-attn for inference(robobrain2)
+      - name: Check sccache installation and get path
+        id: get_sccache_path
+        timeout-minutes: 15
+        run: |
+          echo "=== Step 1: Check if sccache is installed ==="
+          if ! command -v sccache &> /dev/null; then
+            echo "❌ Error: sccache is not found in system PATH! Please install sccache first."
+            exit 1
+          else
+            SCCACHE_VERSION=0.8.1
+            export CURL_OPTS="--connect-timeout 120 --max-time 600 --retry 5 --retry-delay 60"
+            curl ${CURL_OPTS} -L https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz \
+              | tar xz
+            mv sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache
+            chmod +x /usr/bin/sccache
+            echo "SCCACHE_DIR=/root/.cache/sccache" >> $GITHUB_ENV
+            echo "RUSTC_WRAPPER=$(which sccache)" >> $GITHUB_ENV
+            echo "PATH=/usr/bin/sccache:$PATH" >> $GITHUB_ENV
+            sccache --version
+          fi
+
+          SCCACHE_PATH=$(command -v sccache)
+          echo "sccache_path=${SCCACHE_PATH}" >> $GITHUB_OUTPUT
+
+          echo "Found sccache at: ${SCCACHE_PATH}"
+
+      - name: Install vllm
         timeout-minutes: 15
         working-directory: /__w/vllm-FL/vllm-FL
         env:
           SCCACHE_CPP2: 1
           CUDA_CCACHE: 1
-          SCCACHE_CACHE_SIZE: 20G
           SCCACHE_VERBOSE: 0
-          CMAKE_C_COMPILER_LAUNCHER: $(command -v sccache)
-          CMAKE_CXX_COMPILER_LAUNCHER: $(command -v sccache)
-          CMAKE_CUDA_COMPILER_LAUNCHER: $(command -v sccache)
+          SCCACHE_CACHE_SIZE: 20G
+          SCCACHE_DIR: /root/.cache/sccache
+          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
+          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
+          CMAKE_CUDA_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
         run: |
           CONDA_ENV='flagscale-inference'
           CONDA_PATH='/root/miniconda3'
@@ -72,6 +101,10 @@ jobs:
             echo "ℹ️  Running tests with system Python"
           fi
 
+          cd /workflow && git clone https://github.com/zihugithub/FlagScale.git
+          cd /workflow/FlagScale && git clone https://github.com/flagos-ai/vllm-FL.git
+          pip install . -vvv
+          
           pip uninstall -y flash_attn
           pip install flash-attn==2.6.3 --no-build-isolation
           python -c "import flash_attn; import flash_attn.layers; print('FlashAttention loaded successfully, version:', flash_attn.__version__)"
