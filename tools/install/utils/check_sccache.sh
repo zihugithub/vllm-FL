@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail  # 开启严格模式：报错即退出、未定义变量报错、管道错误传递
+
 # ===================== 配置参数（集中管理，便于修改）=====================
 SCCACHE_VERSION="0.8.1"
 SCCACHE_ARCH="x86_64-unknown-linux-musl"
@@ -62,4 +62,5 @@ fi
 # ===================== 验证安装 =====================
 echo -n "✅ 安装完成！sccache 版本："
 sccache --version | head -n1
+
 
