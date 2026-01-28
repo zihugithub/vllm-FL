@@ -49,7 +49,7 @@ jobs:
             exit 1
           else
             echo "安装sccache"
-            source ./tools/install/utils/check_sccache.sh
+            bash -x ./tools/install/utils/check_sccache.sh
           fi
 
           SCCACHE_PATH=$(command -v sccache)
