@@ -48,8 +48,7 @@ jobs:
             echo "❌ Error: sccache is not found in system PATH! Please install sccache first."
             exit 1
           else
-            echo "安装sccache"
-            bash -x ./tools/install/utils/check_sccache.sh
+            source ./tools/install/utils/check_sccache.sh
           fi
 
           SCCACHE_PATH=$(command -v sccache)
