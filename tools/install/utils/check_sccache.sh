@@ -9,7 +9,7 @@ SCCACHE_ARCH="x86_64-unknown-linux-musl"
 SCCACHE_DOWNLOAD_URL="https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/sccache-v${SCCACHE_VERSION}-${SCCACHE_ARCH}.tar.gz"
 SCCACHE_INSTALL_PATH="/usr/bin/sccache"
 
-CURL_OPTS="--connect-timeout 120 --max-time 600 --retry 5 --retry-delay 60 --progress-bar -L"
+CURL_OPTS="--connect-timeout 120 --max-time 600 --retry 5 --retry-delay 60"
 
 SCCACHE_TMP_DIR="sccache-v${SCCACHE_VERSION}-${SCCACHE_ARCH}"
 
