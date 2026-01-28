@@ -3,23 +3,23 @@
 
 # Logging functions with emojis for better visibility
 log_info() {
-    echo "🔍 [INFO] $*"
+    echo -e "\033[36m🔍 [INFO]    $*\033[0m"
 }
 
 log_warn() {
-    echo "⚠️  [WARN] $*" >&2
+    echo -e "\033[33m⚠️  [WARN]    $*\033[0m" >&2
 }
 
 log_error() {
-    echo "❌ [ERROR] $*" >&2
+    echo -e "\033[31m❌ [ERROR]   $*\033[0m" >&2
 }
 
 log_success() {
-    echo "✅ [SUCCESS] $*"
+    echo -e "\033[32m✅ [SUCCESS] $*\033[0m"
 }
 
 log_step() {
-    echo "🔧 [STEP] $*"
+    echo -e "\033[35m🔧 [STEP]    $*\033[0m"
 }
 
 # Get the project root directory
