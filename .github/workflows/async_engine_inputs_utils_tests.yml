@@ -3,26 +3,27 @@ name: Async Engine, Inputs, Utils, Worker Test
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
     paths:
-      - 'vllm/**'
-      - 'tests/test_inputs.py'
-      - 'tests/test_outputs.py'
-      - 'tests/multimodal/**'
-      - 'tests/utils_/**'
-      - 'tests/standalone_tests/lazy_imports.py'
-      - 'tests/transformers_utils/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'vllm/**'
-      - 'tests/test_inputs.py'
-      - 'tests/test_outputs.py'
-      - 'tests/multimodal/**'
-      - 'tests/utils_/**'
-      - 'tests/standalone_tests/lazy_imports.py'
-      - 'tests/transformers_utils/**'
+      - .github/workflows/async_engine_inputs_utils_tests.yml
+  #     - 'vllm/**'
+  #     - 'tests/test_inputs.py'
+  #     - 'tests/test_outputs.py'
+  #     - 'tests/multimodal/**'
+  #     - 'tests/utils_/**'
+  #     - 'tests/standalone_tests/lazy_imports.py'
+  #     - 'tests/transformers_utils/**'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'vllm/**'
+  #     - 'tests/test_inputs.py'
+  #     - 'tests/test_outputs.py'
+  #     - 'tests/multimodal/**'
+  #     - 'tests/utils_/**'
+  #     - 'tests/standalone_tests/lazy_imports.py'
+  #     - 'tests/transformers_utils/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
@@ -30,7 +31,7 @@ concurrency:
 
 jobs:
   amd-experimental-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     defaults:
       run:
         shell: bash
@@ -50,6 +51,7 @@ jobs:
         --ulimit stack=67108864
         --ulimit nofile=65535:65535
         --user root
+        --pull always
 
     env:
       PYTHONUNBUFFERED: "1"
@@ -100,7 +102,7 @@ jobs:
           pip install -e . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
-    
+
       - name: Verify installation
         shell: bash
         run: |

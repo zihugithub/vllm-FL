@@ -10,11 +10,11 @@ on:
       - unlabeled
   push:
     branches:
-      - test_workflows_ye
+      - main
 
 jobs:
   bc_lint:
-    if: github.repository_owner == 'zihugithub'
+    if: github.repository_owner == 'flagos-ai'
     runs-on: [ self-hosted, Linux, X64, ye_test ]
     steps:
       - name: Run BC Lint Action

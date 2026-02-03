@@ -3,7 +3,9 @@ name: GPU Silicon Smoke Test
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
+    paths:
+      - .github/workflows/gpu-smoke-test.yml
   pull_request:
     branches:
       - main
@@ -14,7 +16,7 @@ concurrency:
 
 jobs:
   ubuntu-gpu-smoke-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     timeout-minutes: 60
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216

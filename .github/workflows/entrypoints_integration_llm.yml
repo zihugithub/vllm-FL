@@ -5,7 +5,9 @@ name: Entrypoints Integration Test (LLM)
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
+    paths:
+      - .github/workflows/entrypoints_integration_llm.yml
   pull_request:
     branches:
       - main
@@ -16,7 +18,7 @@ concurrency:
 
 jobs:
   entrypoints-integration-test(llm):
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     defaults:
       run:
         shell: bash

@@ -3,18 +3,19 @@ name: Entrypoints Integration Test (API Server)
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
     paths:
-      - 'vllm/**'
-      - 'tests/entrypoints/openai/**'
-      - 'tests/entrypoints/test_chat_utils.py'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'vllm/**'
-      - 'tests/entrypoints/openai/**'
-      - 'tests/entrypoints/test_chat_utils.py'
+      - .github/workflows/entrypoints_intergration_apiserver.yml
+  #     - 'vllm/**'
+  #     - 'tests/entrypoints/openai/**'
+  #     - 'tests/entrypoints/test_chat_utils.py'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'vllm/**'
+  #     - 'tests/entrypoints/openai/**'
+  #     - 'tests/entrypoints/test_chat_utils.py'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
@@ -22,7 +23,7 @@ concurrency:
 
 jobs:
   ubuntu-gpu-smoke-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       ports:

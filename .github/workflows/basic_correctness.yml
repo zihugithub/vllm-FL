@@ -5,7 +5,7 @@ name: Basic Correctness Test
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
   pull_request:
     branches:
       - main
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   basic-correctness-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     defaults:
       run:
         shell: bash

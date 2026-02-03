@@ -3,16 +3,17 @@ name: Python-only Installation Test
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
     paths:
-      - 'tests/standalone_tests/python_only_compile.sh'
-      - 'setup.py'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'tests/standalone_tests/python_only_compile.sh'
-      - 'setup.py'
+      - .github/workflows/python_only_installation.yml
+  #     - 'tests/standalone_tests/python_only_compile.sh'
+  #     - 'setup.py'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'tests/standalone_tests/python_only_compile.sh'
+  #     - 'setup.py'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
@@ -20,7 +21,7 @@ concurrency:
 
 jobs:
   python-only-install-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     defaults:
       run:
         shell: bash

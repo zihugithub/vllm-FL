@@ -8,6 +8,11 @@ on:
       - reopened
       - labeled
       - unlabeled
+  push:
+    branches:
+      - test_workflows_ye
+    paths:
+      - .github/workflows/pre-commit.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +23,7 @@ permissions:
 
 jobs:
   pre-commit:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0

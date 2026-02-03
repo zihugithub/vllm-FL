@@ -3,16 +3,17 @@ name: EPLB Execution Test
 on:
   push:
     branches:
-      - main
+      - test_workflows_ye
     paths:
-      - 'vllm/distributed/eplb/**'
-      - 'tests/distributed/test_eplb_execute.py'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'vllm/distributed/eplb/**'
-      - 'tests/distributed/test_eplb_execute.py'
+      - .github/workflows/eplb_execution.yml
+  #     - 'vllm/distributed/eplb/**'
+  #     - 'tests/distributed/test_eplb_execute.py'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'vllm/distributed/eplb/**'
+  #     - 'tests/distributed/test_eplb_execute.py'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
@@ -20,7 +21,7 @@ concurrency:
 
 jobs:
   ubuntu-gpu-smoke-test:
-    runs-on: [ self-hosted, Linux, X64, nviida, gpu-8 ]
+    runs-on: [ self-hosted, Linux, X64, ye_test ]
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
       ports:
