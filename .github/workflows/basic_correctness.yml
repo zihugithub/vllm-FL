@@ -22,12 +22,12 @@ jobs:
         shell: bash
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
-      ports:
-        - 80:80
-      volumes:
-        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
-        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-        - /home/yefubao/tmp/pip-cache:/root/.cache/pip
+      # ports:
+      #   - 80:80
+      # volumes:
+      #   - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+      #   - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+      #   - /home/yefubao/tmp/pip-cache:/root/.cache/pip
       options: >-
         --gpus all 
         --shm-size=500g 

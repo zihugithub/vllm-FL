@@ -90,25 +90,9 @@ jobs:
           nvcc -V || echo "nvcc未安装，忽略" # 若有CUDA，校验CUDA环境
           echo "测试步骤执行完成"
 
+# 依赖
 # pytest
 # tblib
 
-# 1. 编译源码留着，不然报错
-# ImportError while loading conftest '/workspace/vllm-FL/tests/conftest.py'.
-# tests/conftest.py:37: in <module>
-#     from tests.models.utils import (TokensTextLogprobs,
-# tests/models/utils.py:13: in <module>
-#     from vllm.config import ModelConfig, ModelDType, RunnerOption
-# vllm/config/__init__.py:34: in <module>
-#     from vllm.config.lora import LoRAConfig
-# vllm/config/lora.py:14: in <module>
-#     from vllm.platforms import current_platform
-# vllm/platforms/__init__.py:248: in __getattr__
-#     _current_platform = resolve_obj_by_qualname(
-# vllm/utils/__init__.py:2680: in resolve_obj_by_qualname
-#     module = importlib.import_module(module_name)
-#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# vllm/platforms/cuda.py:18: in <module>
-#     import vllm._C  # noqa
-#     ^^^^^^^^^^^^^^
-# E   ModuleNotFoundError: No module named 'vllm._C'
+# .github/workflows/async_engine_inputs_utils_tests.yml
+#   pip install librosa

@@ -23,12 +23,12 @@ jobs:
         shell: bash
     container:
       image: localhost:5000/flagos:vllm-cuda-amd64-test-20251216
-      ports:
-        - 80
-      volumes:
-        - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
-        - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-        - /home/yefubao/tmp/pip-cache:/root/.cache/pip
+      # ports:
+      #   - 80
+      # volumes:
+      #   - /home/flagscale_cicd/docker/docker_build/docker_tokenizers:/home/gitlab-runner/tokenizers
+      #   - /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+      #   - /home/yefubao/tmp/pip-cache:/root/.cache/pip
       options: >-
         --gpus all 
         --shm-size=500g 
@@ -90,7 +90,6 @@ jobs:
           # ===== Mount Directory Check =====
           [ -d "/home/gitlab-runner/tokenizers" ] || echo "⚠️ tokenizers directory not mounted"
           [ -d "/home/gitlab-runner/data" ] || echo "⚠️ data directory not mounted"
-          [ -d "/root/.cache/pip" ] || mkdir -p /root/.cache/pip
 
       - name: Install dependencies and build vLLM
         run: |
@@ -98,7 +97,7 @@ jobs:
           pip install -r requirements/cuda.txt
 
           # install vllm
-          pip install -e . -vvv
+          pip install . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
 
@@ -122,6 +121,7 @@ jobs:
       - name: RUN entrypoints
         # timeout-minutes: 10
         working-directory: tests
+        run: |
           pytest entrypoints/ \
             --ignore=entrypoints/llm \
             --ignore=entrypoints/openai \

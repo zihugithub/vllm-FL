@@ -35,3 +35,13 @@ jobs:
     - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
       with:
         extra_args: --all-files --hook-stage manual
+
+# 文件 / 目录权限拒绝（Permission denied） 问题
+# Removing previously created refs, to avoid conflicts
+# /usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+# refs/heads/test_workflows_ye
+# /usr/bin/git checkout --detach
+# Error: fatal: Unable to create '/home/yefubao/vllm_cicd/actions-runner/_work/vllm-FL/vllm-FL/.git/index.lock': Permission denied
+# Warning: Unable to prepare the existing repository. The repository will be recreated instead.
+# Deleting the contents of '/home/yefubao/vllm_cicd/actions-runner/_work/vllm-FL/vllm-FL'
+# Error: File was unable to be removed Error: EACCES: permission denied, unlink '/home/yefubao/vllm_cicd/actions-runner/_work/vllm-FL/vllm-FL/.buildkite/check-wheel-size.py'
