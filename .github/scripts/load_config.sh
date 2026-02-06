@@ -43,14 +43,10 @@ load_config() {
         return 1
     fi
 
-    if [ $(echo $DEPTH_JSON | jq 'length') -gt 0 ]; then
-        DEPTH=$(echo $DEPTH_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
-    else
-        DEPTH="1"
-    fi
-
     if [ $DEPTH_JSON = "all"];then
         DEPTH=$(find "tests" -type d | awk -F/ '{print NF-1}' | sort -nr | head -n 1)
+    else
+        DEPTH=$DEPTH_JSON
     fi
     TEST_FLIE=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
 
