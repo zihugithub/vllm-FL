@@ -51,13 +51,13 @@ load_config() {
     TEST_FILES=$(find "tests/$UNIT_NAME" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,/ /g; s/ $//')
 
     if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
-        IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
+        IGNORE=$(echo $IGNORE_JSON | jq -r '[.[] | "--ignore=\(.)"] | join(" ")' | jq -r tostring)
     else
         IGNORE="pass"
     fi
 
     if [ $(echo $DESELECT_JSON | jq 'length') -gt 0 ]; then
-        DESELECT=$(echo $DESELECT_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
+        DESELECT=$(echo $DESELECT_JSON | jq -r '[.[] | "--deselect=\(.)"] | join(" ")' | jq -r tostring)
     else
         DESELECT="pass"
     fi
