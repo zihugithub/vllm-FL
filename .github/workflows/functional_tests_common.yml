@@ -70,18 +70,25 @@ jobs:
           # Load configuration and group tests by task
           load_config benchmarks
 
-  run_unit:
-    needs: checkout_and_config
-    runs-on: [ self-hosted, ye_test]
-    container:
-      image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
-      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: run test
+      - name: test
         run: |
           echo ">>>: ${steps.config.outputs.depth}"
           echo ">>>: ${steps.config.outputs.ignore}"
           echo ">>>: ${steps.config.outputs.deselect}"
           echo ">>>: ${steps.config.outputs.test_files}"
+
+  # run_unit:
+  #   needs: checkout_and_config
+  #   runs-on: [ self-hosted, ye_test]
+  #   container:
+  #     image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
+  #     options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #     - name: run test
+  #       run: |
+  #         echo ">>>: ${steps.config.outputs.depth}"
+  #         echo ">>>: ${steps.config.outputs.ignore}"
+  #         echo ">>>: ${steps.config.outputs.deselect}"
+  #         echo ">>>: ${steps.config.outputs.test_files}"
