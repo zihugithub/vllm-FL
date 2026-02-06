@@ -19,11 +19,11 @@ jobs:
     container:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-    outputs:
-      depth: ${steps.config.outputs.depth}"
-      ignore: ${steps.config.outputs.ignore}"
-      deselect: ${steps.config.outputs.deselect}"
-      test_files: ${steps.config.outputs.test_files}"
+    # outputs:
+    #   depth: ${steps.config.outputs.depth}"
+    #   ignore: ${steps.config.outputs.ignore}"
+    #   deselect: ${steps.config.outputs.deselect}"
+    #   test_files: ${steps.config.outputs.test_files}"
     strategy:
       matrix:
         subset:
@@ -73,7 +73,7 @@ jobs:
           source .github/scripts/load_config.sh
 
           # Load configuration and group tests by task
-          load_config benchmarks
+          load_config ${{ matrix.subset }}
 
       - name: Run test for ${{ matrix.subset }}
         run: |
@@ -81,4 +81,3 @@ jobs:
           echo ">>> ignore: ${{ steps.config.outputs.ignore }}"
           echo ">>> deselect: ${{ steps.config.outputs.deselect }}"
           echo ">>> test_files: ${{ steps.config.outputs.test_files }}"
-
