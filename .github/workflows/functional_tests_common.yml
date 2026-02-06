@@ -99,12 +99,11 @@ jobs:
           fi
 
           echo "📤 Setting output parameters..."
-          cat <<EOF >> "$GITHUB_OUTPUT"
-          depth=$DEPTH
-          ignore=$IGNORE
-          deselect=$DESELECT
-          test_files=$TEST_FILES
-          EOF
+          echo "depth=$DEPTH" >> "$GITHUB_OUTPUT"
+          echo "ignore=$IGNORE" >> "$GITHUB_OUTPUT"
+          echo "deselect=$DESELECT" >> "$GITHUB_OUTPUT"
+          echo "test_files=$TEST_FILES" >> "$GITHUB_OUTPUT"
+          
       - name: run test
         run: |
           echo ">>>: ${steps.config.outputs.depth}"
