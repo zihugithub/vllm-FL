@@ -52,6 +52,7 @@ jobs:
 
           SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
           PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+          echo "$PROJECT_ROOT"
           UNIT_NAME="compile"
           cd "$PROJECT_ROOT" && pwd
 
