@@ -75,3 +75,4 @@ jobs:
           echo ">>>: ${depth}"
           echo ">>>: ${ignore}"
           echo ">>>: ${deselect}"
+          echo ">>>: ${test_file}"

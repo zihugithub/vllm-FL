@@ -43,10 +43,10 @@ load_config() {
         return 1
     fi
 
-    if [ $DEPTH_JSON = "all"];then
+    if [ "$DEPTH_JSON" = "all" ]; then
         DEPTH=$(find "tests" -type d | awk -F/ '{print NF-1}' | sort -nr | head -n 1)
     else
-        DEPTH=$DEPTH_JSON
+        DEPTH="$DEPTH_JSON"
     fi
     TEST_FLIE=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
 
@@ -65,4 +65,5 @@ load_config() {
     { echo 'depth<<EOFRUNSON'; echo "$DEPTH"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
     { echo 'ignore<<EOFRUNSON'; echo "$IGNORE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
     { echo 'deselect<<EOFRUNSON'; echo "$DESELECT"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
+    { echo 'test_file<<EOFRUNSON'; echo "$TEST_FLIE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
 }
