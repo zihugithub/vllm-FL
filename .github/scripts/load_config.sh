@@ -49,7 +49,7 @@ load_config() {
         DEPTH="$DEPTH_JSON"
     fi
 
-    TEST_FILES=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py")
+    TEST_FILES=$(find "tests/$UNIT_NAME" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,$/ /')
 
     if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
         IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
@@ -61,7 +61,7 @@ load_config() {
         DESELECT=$(echo $DESELECT_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
     else
         DESELECT="pass"
-    fi  
+    fi
 
     echo "depth=$DEPTH" >> $GITHUB_OUTPUT
     echo "ignore=$IGNORE" >> $GITHUB_OUTPUT
