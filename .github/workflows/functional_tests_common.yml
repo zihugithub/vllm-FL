@@ -11,14 +11,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  run_unit:
+  checkout_and_config:
     defaults:
       run:
         shell: bash
     runs-on: [ self-hosted, ye_test]
-    container:
-      image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
-      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
+    # container:
+    #   image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
+    #   options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
+    outputs:
+      depth: ${steps.config.outputs.depth}"
+      ignore: ${steps.config.outputs.ignore}"
+      deselect: ${steps.config.outputs.deselect}"
+      test_files: ${steps.config.outputs.test_files}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,16 +50,12 @@ jobs:
           chmod +x "$BIN_DIR/jq"
           jq --version
 
-      - name: Load unit case
+      - name: Load platform configuration
         id: config
         run: |
           set -euo pipefail
 
-          UNIT_NAME="compile"
-
           CONFIG_FILE=".github/configs/unit.yml"
-
-          echo "PWD: $PWD"
 
           if [ ! -f "$CONFIG_FILE" ]; then
             echo "❌ Error: Platform configuration file not found: $CONFIG_FILE"
@@ -63,50 +64,18 @@ jobs:
             exit 1
           fi
 
-          # Extract CI/CD configuration from .github/configs using yq
-          echo "Extracting configuration from $CONFIG_FILE"
-          DEPTH_JSON=$(/usr/local/bin/yq -r  -o=json -I=0 ".unit-conf.$UNIT_NAME.depth" "$CONFIG_FILE")
-          IGNORE_JSON=$(/usr/local/bin/yq -r  -o=json -I=0 ".unit-conf.$UNIT_NAME.ignore" "$CONFIG_FILE")
-          DESELECT_JSON=$(/usr/local/bin/yq -r  -o=json -I=0 ".unit-conf.$UNIT_NAME.deselect" "$CONFIG_FILE")
+           # Source the platform config loading script
+          source .github/scripts/load_config.sh
 
-          echo "Depth: $DEPTH_JSON"
-          echo "Ignore: $IGNORE_JSON"
-          echo "Deselect: $DESELECT_JSON"
+          # Load configuration and group tests by task
+          load_config benchmarks
 
-          # Validate required fields
-          if [ -z "$DEPTH_JSON" ] || [ -z "$IGNORE_JSON" ] || [ -z "$DESELECT_JSON" ]; then
-              echo "❌ Error: One or more required fields are missing in unit config '$UNIT_NAME'."
-              return 1
-          fi
-
-          if [ "$DEPTH_JSON" = "all" ]; then
-              DEPTH=$(find "tests" -type d | awk -F/ '{print NF-1}' | sort -nr | head -n 1)
-          else
-              DEPTH="$DEPTH_JSON"
-          fi
-          # TEST_FILES=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
-
-          if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
-              IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
-          else
-              IGNORE="pass"
-          fi
-
-          if [ $(echo $DESELECT_JSON | jq 'length') -gt 0 ]; then
-              DESELECT=$(echo $DESELECT_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
-          else
-              DESELECT="pass"
-          fi
-
-          echo "📤 Setting output parameters..."
-          echo "depth=$DEPTH" >> "$GITHUB_OUTPUT"
-          echo "ignore=$IGNORE" >> "$GITHUB_OUTPUT"
-          echo "deselect=$DESELECT" >> "$GITHUB_OUTPUT"
-          # echo "test_files=$TEST_FILES" >> "$GITHUB_OUTPUT"
-          
+  run_unit:
+    needs: checkout_and_config
+    steps:
       - name: run test
         run: |
           echo ">>>: ${steps.config.outputs.depth}"
           echo ">>>: ${steps.config.outputs.ignore}"
           echo ">>>: ${steps.config.outputs.deselect}"
-          # echo ">>>: ${steps.config.outputs.test_file}"
+          echo ">>>: ${steps.config.outputs.test_files}"

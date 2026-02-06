@@ -48,7 +48,8 @@ load_config() {
     else
         DEPTH="$DEPTH_JSON"
     fi
-    TEST_FLIE=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
+
+    TEST_FILES=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py")
 
     if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
         IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
@@ -60,10 +61,10 @@ load_config() {
         DESELECT=$(echo $DESELECT_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
     else
         DESELECT="pass"
-    fi
+    fi  
 
-    { echo 'depth<<EOFRUNSON'; echo "$DEPTH"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-    { echo 'ignore<<EOFRUNSON'; echo "$IGNORE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-    { echo 'deselect<<EOFRUNSON'; echo "$DESELECT"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-    { echo 'test_file<<EOFRUNSON'; echo "$TEST_FLIE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
+    echo "depth=$DEPTH" >> $GITHUB_OUTPUT
+    echo "ignore=$IGNORE" >> $GITHUB_OUTPUT
+    echo "deselect=$DESELECT" >> $GITHUB_OUTPUT
+    echo "test_files=$TEST_FILES" >> $GITHUB_OUTPUT
 }
