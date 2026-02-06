@@ -1,5 +1,5 @@
 unit-conf:
-  test1:
+  benchmarks:
     depth: 1
     ignore:
       - i1.txt
@@ -8,7 +8,7 @@ unit-conf:
       - d1.txt
       - d2.txt
 
-  test2:
+  compile:
     depth: 1
     ignore:
       - i3.txt

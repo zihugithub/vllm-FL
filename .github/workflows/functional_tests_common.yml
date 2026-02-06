@@ -1,13 +1,14 @@
-name: FlagScale Tests Nvidia
+name: Unit Tests CUDA
 
 on:
   push:
     branches: test_ye
+  pull_request:
+    branches: main
 
-env:
-  DEFAULT_TYPE: ${{ inputs.type || 'train' }}
-  DEFAULT_TASK: ${{ inputs.task || 'deepseek' }}
-  DEFAULT_IMAGE: ${{ inputs.image || 'localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515' }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
+  cancel-in-progress: true
 
 jobs:
   checkout_and_config:
@@ -23,8 +24,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # - name: Install dependencies and build vLLM
+        # timeout-minutes: 60
+        # run: |
+        #   set -euo pipefail
+        #   pip install -r requirements/cuda.txt
+        #   pip install -e . -vvv
+        # env:
+        #   CMAKE_BUILD_PARALLEL_LEVEL: 4
+        #   PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+      - name: Install auxiliary tools
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+
+          YQ_VERSION="v4.45.1"
+          JQ_VERSION="1.7.1"
+          BIN_DIR="/usr/local/bin"
+
+          [ -w "$BIN_DIR" ] || { echo "Error: $BIN_DIR is not writable!"; exit 1; }
+
+          # Install mikefarah/yq (v4) for YAML parsing
+          echo "Installing yq $YQ_VERSION..."
+          curl -sSL --retry 3 "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64" -o "$BIN_DIR/yq"
+          chmod +x "$BIN_DIR/yq"
+          yq --version
+
+          echo "Installing jq $JQ_VERSION..."
+          curl -sSL --retry 3 "https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-linux-amd64" -o "$BIN_DIR/jq"
+          chmod +x "$BIN_DIR/jq"
+          jq --version
+
       - name: Load platform configuration
-        id: config
+        strategy:
+          matrix:
+            subset:
+              - compile
+              - benchmarks
+          fail-fast: false
         run: |
           set -euo pipefail
 
@@ -37,17 +75,8 @@ jobs:
             exit 1
           fi
 
-          # Install mikefarah/yq (v4) for YAML parsing
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
-          /usr/local/bin/yq --version
-
-          wget -qO /usr/local/bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
-          chmod +x /usr/local/bin/jq
-          /usr/local/bin/jq --version
-
           source .github/scripts/load_config.sh
-          load_config test1
+          load_config ${{ matrix.subset }}
 
           echo ">>>: ${depth}"
           echo ">>>: ${ignore}"
