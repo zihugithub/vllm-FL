@@ -63,9 +63,8 @@ jobs:
           load_config compile
 
       - name: run test
-        needs: config
         run: |
-          echo ">>>: ${steps.config.depth}"
-          echo ">>>: ${steps.config.ignore}"
-          echo ">>>: ${steps.config.deselect}"
-          echo ">>>: ${steps.config.test_file}"
+          echo ">>>: ${steps.config.outputs.depth}"
+          echo ">>>: ${steps.config.outputs.ignore}"
+          echo ">>>: ${steps.config.outputs.deselect}"
+          echo ">>>: ${steps.config.outputs.test_file}"
