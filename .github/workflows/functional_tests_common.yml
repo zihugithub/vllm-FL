@@ -70,7 +70,7 @@ jobs:
           fi
 
           source .github/scripts/load_config.sh
-          load_config test1
+          load_config compile
 
           echo ">>>: ${depth}"
           echo ">>>: ${ignore}"
