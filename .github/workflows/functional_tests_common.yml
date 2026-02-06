@@ -72,10 +72,10 @@ jobs:
 
       - name: test
         run: |
-          echo ">>>: ${steps.config.outputs.depth}"
-          echo ">>>: ${steps.config.outputs.ignore}"
-          echo ">>>: ${steps.config.outputs.deselect}"
-          echo ">>>: ${steps.config.outputs.test_files}"
+          echo ">>> depth: ${{ steps.config.outputs.depth }}"
+          echo ">>> ignore: ${{ steps.config.outputs.ignore }}"
+          echo ">>> deselect: ${{ steps.config.outputs.deselect }}"
+          echo ">>> test_files: ${{ steps.config.outputs.test_files }}"
 
   # run_unit:
   #   needs: checkout_and_config
