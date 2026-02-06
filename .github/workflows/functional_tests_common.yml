@@ -1,96 +1,57 @@
-name: FlagScale test
+name: FlagScale Tests Nvidia
 
 on:
   push:
-    branches: ["test_ye"]
+    branches: test_ye
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.actor }}
-  cancel-in-progress: true
+env:
+  DEFAULT_TYPE: ${{ inputs.type || 'train' }}
+  DEFAULT_TASK: ${{ inputs.task || 'deepseek' }}
+  DEFAULT_IMAGE: ${{ inputs.image || 'localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515' }}
 
 jobs:
-  functional_test:
-    runs-on: [self-hosted, ye_test]
+  checkout_and_config:
     defaults:
       run:
         shell: bash
+    runs-on: [ self-hosted, ye_test]
     container:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
-      ports:
-        - 80
-      volumes:
-        - /home/flagscale_cicd/sccache:/root/.cache/sccache
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          ssh-strict: true
-          ssh-user: git
-          persist-credentials: false
-          clean: true
-          sparse-checkout-cone-mode: true
-          fetch-tags: false
-          show-progress: true
-          lfs: false
-          submodules: false
-          set-safe-directory: true
 
-      - name: Check sccache installation and get path
-        id: get_sccache_path
-        timeout-minutes: 15
-        working-directory: /__w/vllm-FL/vllm-FL
+      - name: Load platform configuration
+        id: config
         run: |
-          if ! command -v sccache &> /dev/null; then
-            echo "❌ Error: sccache is not found in system PATH! Please install sccache first."
+          set -euo pipefail
+
+          CONFIG_FILE=".github/configs/unit.yml"
+
+          if [ ! -f "$CONFIG_FILE" ]; then
+            echo "❌ Error: Platform configuration file not found: $CONFIG_FILE"
+            echo "Available configs:"
+            ls -la .github/configs/
             exit 1
-          else
-            source ./tools/install/utils/check_sccache.sh
           fi
 
-          SCCACHE_PATH=$(command -v sccache)
-          echo "sccache_path=${SCCACHE_PATH}" >> $GITHUB_OUTPUT
+          # Install mikefarah/yq (v4) for YAML parsing
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+          /usr/local/bin/yq --version
 
-          echo "Found sccache at: ${SCCACHE_PATH}"
+          wget -qO /usr/local/bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
+          chmod +x /usr/local/bin/jq
+          /usr/local/bin/jq --version
 
-      - name: Install vllm
-        working-directory: /__w/vllm-FL/vllm-FL
-        env:
-          SCCACHE_CPP2: 1
-          CUDA_CCACHE: 1
-          SCCACHE_VERBOSE: 0
-          SCCACHE_CACHE_SIZE: 20G
-          SCCACHE_DIR: /root/.cache/sccache
-          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-          CMAKE_CUDA_COMPILER_LAUNCHER: ${{ steps.get_sccache_path.outputs.sccache_path }}
-        run: |
-          CONDA_ENV='flagscale-inference'
-          CONDA_PATH='/root/miniconda3'
+          source .github/scripts/load_config.sh
+          load_config test1
 
-          echo "CMAKE_C_COMPILER_LAUNCHER: ${CMAKE_C_COMPILER_LAUNCHER}"
-          echo "CMAKE_CXX_COMPILER_LAUNCHER: ${CMAKE_CXX_COMPILER_LAUNCHER}"
-          echo "CMAKE_CUDA_COMPILER_LAUNCHER: ${CMAKE_CUDA_COMPILER_LAUNCHER}"
+          echo ">>>: ${depth}"
+          echo ">>>: ${ignore}"
+          echo ">>>: ${deselect}"
 
-          # Source conda utilities for reusable functions
-          source ./tools/install/utils/conda_utils.sh
 
-          # Conditionally activate conda environment if specified
-          if [ -n "$CONDA_ENV" ]; then
-            if activate_conda "$CONDA_ENV" "$CONDA_PATH"; then
-              : # Success message already displayed by activate_conda
-            else
-              echo "⚠️  Conda environment requested but conda not found"
-              echo "Continuing without conda activation..."
-            fi
-          else
-            echo "ℹ️  Running tests with system Python"
-          fi
 
-          cd /workflow && git clone https://github.com/zihugithub/FlagScale.git
-          cd /workflow/FlagScale && git clone https://github.com/flagos-ai/vllm-FL.git
-          pip install . -vvv
-          

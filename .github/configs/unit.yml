@@ -1,0 +1,18 @@
+unit-conf:
+  test1:
+    depth: 1
+    ignore:
+      - i1.txt
+      - i2.txt
+    deselect:
+      - d1.txt
+      - d2.txt
+
+  test2:
+    depth: 1
+    ignore:
+      - i3.txt
+      - i4.txt
+    deselect:
+      - d3.txt
+      - d4.txt
