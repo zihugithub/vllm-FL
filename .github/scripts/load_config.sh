@@ -5,9 +5,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-cd "$PROJECT_ROOT" && pwd
+# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# cd "$PROJECT_ROOT" && pwd
 
 load_config() {
     local CONFIG_FILE=".github/configs/unit.yml"
@@ -32,11 +32,10 @@ load_config() {
     IGNORE_JSON=$(/usr/local/bin/yq -r  -o=json -I=0 ".unit-conf.$UNIT_NAME.ignore" "$CONFIG_FILE")
     DESELECT_JSON=$(/usr/local/bin/yq -r  -o=json -I=0 ".unit-conf.$UNIT_NAME.deselect" "$CONFIG_FILE")
 
-    echo "Depth: $DEPTH_JSON"
-    echo "Ignore: $IGNORE_JSON"
-    echo "Deselect: $DESELECT_JSON"
+    echo "DEPTH_JSON: $DEPTH_JSON"
+    echo "IGNORE_JSON: $IGNORE_JSON"
+    echo "DESELECT_JSON: $DESELECT_JSON"
 
-    echo "PWD: $PWD"
     # Validate required fields
     if [ -z "$DEPTH_JSON" ] || [ -z "$IGNORE_JSON" ] || [ -z "$DESELECT_JSON" ]; then
         echo "❌ Error: One or more required fields are missing in unit config '$UNIT_NAME'."
@@ -63,7 +62,6 @@ load_config() {
         DESELECT="pass"
     fi
 
-    echo "depth=$DEPTH" >> $GITHUB_OUTPUT
     echo "ignore=$IGNORE" >> $GITHUB_OUTPUT
     echo "deselect=$DESELECT" >> $GITHUB_OUTPUT
     echo "test_files=$TEST_FILES" >> $GITHUB_OUTPUT

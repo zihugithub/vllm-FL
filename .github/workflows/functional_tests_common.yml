@@ -19,11 +19,6 @@ jobs:
     container:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-    # outputs:
-    #   depth: ${steps.config.outputs.depth}"
-    #   ignore: ${steps.config.outputs.ignore}"
-    #   deselect: ${steps.config.outputs.deselect}"
-    #   test_files: ${steps.config.outputs.test_files}"
     strategy:
       matrix:
         subset:
@@ -77,7 +72,12 @@ jobs:
 
       - name: Run test for ${{ matrix.subset }}
         run: |
-          echo ">>> depth: ${{ steps.config.outputs.depth }}"
-          echo ">>> ignore: ${{ steps.config.outputs.ignore }}"
-          echo ">>> deselect: ${{ steps.config.outputs.deselect }}"
-          echo ">>> test_files: ${{ steps.config.outputs.test_files }}"
+          ignore=${{ steps.config.outputs.ignore }}
+          deselect=${{ steps.config.outputs.deselect }}
+          test_files=${{ steps.config.outputs.test_files }}
+
+          echo "ignore: $ignore"
+          echo "deselect: $deselect"
+          echo "test_files: $test_files"
+
+          # torchrun --nproc_per_node=8 -m pytest -q -x -p no:warnings $ignore $deselect $test_files
