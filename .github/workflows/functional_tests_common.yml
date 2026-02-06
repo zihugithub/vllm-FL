@@ -73,7 +73,6 @@ jobs:
           echo "Ignore: $IGNORE_JSON"
           echo "Deselect: $DESELECT_JSON"
 
-          
           # Validate required fields
           if [ -z "$DEPTH_JSON" ] || [ -z "$IGNORE_JSON" ] || [ -z "$DESELECT_JSON" ]; then
               echo "❌ Error: One or more required fields are missing in unit config '$UNIT_NAME'."
@@ -99,11 +98,13 @@ jobs:
               DESELECT="pass"
           fi
 
-          { echo 'depth<<EOFRUNSON'; echo "$DEPTH"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-          { echo 'ignore<<EOFRUNSON'; echo "$IGNORE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-          { echo 'deselect<<EOFRUNSON'; echo "$DESELECT"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-          { echo 'test_file<<EOFRUNSON'; echo "$TEST_FLIE"; echo 'EOFRUNSON'; } >> $GITHUB_OUTPUT
-
+          echo "📤 Setting output parameters..."
+          cat <<EOF >> "$GITHUB_OUTPUT"
+          depth=$DEPTH
+          ignore=$IGNORE
+          deselect=$DESELECT
+          test_files=$TEST_FILES
+          EOF
       - name: run test
         run: |
           echo ">>>: ${steps.config.outputs.depth}"
