@@ -7,11 +7,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd $PROJECT_ROOT && pwd
 
 load_config() {
     local CONFIG_FILE=".github/configs/unit.yml"
     local UNIT_NAME=$1
-    cd $PROJECT_ROOT && pwd
 
     if [ -z "$UNIT_NAME" ]; then
         echo "❌ Error: No unit name provided."
@@ -36,10 +36,17 @@ load_config() {
     echo "Ignore: $IGNORE_JSON"
     echo "Deselect: $DESELECT_JSON"
 
+    echo "PWD: $PWD"
     # Validate required fields
     if [ -z "$DEPTH_JSON" ] || [ -z "$IGNORE_JSON" ] || [ -z "$DESELECT_JSON" ]; then
         echo "❌ Error: One or more required fields are missing in unit config '$UNIT_NAME'."
         return 1
+    fi
+
+    if [ $(echo $DEPTH_JSON | jq 'length') -gt 0 ]; then
+        DEPTH=$(echo $DEPTH_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
+    else
+        DEPTH="1"
     fi
 
     if [ $DEPTH_JSON = "all"];then

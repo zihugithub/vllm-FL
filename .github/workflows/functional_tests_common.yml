@@ -52,6 +52,3 @@ jobs:
           echo ">>>: ${depth}"
           echo ">>>: ${ignore}"
           echo ">>>: ${deselect}"
-
-
-
