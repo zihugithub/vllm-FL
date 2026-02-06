@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checkout_and_config:
+  run_unit:
     defaults:
       run:
         shell: bash
@@ -19,20 +19,9 @@ jobs:
     container:
       image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # - name: Install dependencies and build vLLM
-        # timeout-minutes: 60
-        # run: |
-        #   set -euo pipefail
-        #   pip install -r requirements/cuda.txt
-        #   pip install -e . -vvv
-        # env:
-        #   CMAKE_BUILD_PARALLEL_LEVEL: 4
-        #   PIP_DISABLE_PIP_VERSION_CHECK: 1
 
       - name: Install auxiliary tools
         timeout-minutes: 5
@@ -56,7 +45,8 @@ jobs:
           chmod +x "$BIN_DIR/jq"
           jq --version
 
-      - name: Load platform configuration
+      - name: Load unit case
+        id: config
         run: |
           set -euo pipefail
 
@@ -72,7 +62,10 @@ jobs:
           source .github/scripts/load_config.sh
           load_config compile
 
-          echo ">>>: ${depth}"
-          echo ">>>: ${ignore}"
-          echo ">>>: ${deselect}"
-          echo ">>>: ${test_file}"
+      - name:
+        needs: config
+        run: |
+          echo ">>>: ${steps.config.depth}"
+          echo ">>>: ${steps.config.ignore}"
+          echo ">>>: ${steps.config.deselect}"
+          echo ">>>: ${steps.config.test_file}"
