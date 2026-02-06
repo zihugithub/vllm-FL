@@ -62,7 +62,7 @@ jobs:
           source .github/scripts/load_config.sh
           load_config compile
 
-      - name:
+      - name: run test
         needs: config
         run: |
           echo ">>>: ${steps.config.depth}"
