@@ -84,7 +84,7 @@ jobs:
           else
               DEPTH="$DEPTH_JSON"
           fi
-          TEST_FILES=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
+          # TEST_FILES=$(find tests/$UNIT_NAME -mindepth 1 -maxdepth $DEPTH  -name "test_*.py" -type f)
 
           if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
               IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
@@ -102,11 +102,11 @@ jobs:
           echo "depth=$DEPTH" >> "$GITHUB_OUTPUT"
           echo "ignore=$IGNORE" >> "$GITHUB_OUTPUT"
           echo "deselect=$DESELECT" >> "$GITHUB_OUTPUT"
-          echo "test_files=$TEST_FILES" >> "$GITHUB_OUTPUT"
+          # echo "test_files=$TEST_FILES" >> "$GITHUB_OUTPUT"
           
       - name: run test
         run: |
           echo ">>>: ${steps.config.outputs.depth}"
           echo ">>>: ${steps.config.outputs.ignore}"
           echo ">>>: ${steps.config.outputs.deselect}"
-          echo ">>>: ${steps.config.outputs.test_file}"
+          # echo ">>>: ${steps.config.outputs.test_file}"
