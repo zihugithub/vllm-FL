@@ -64,6 +64,7 @@ jobs:
       - name: Install dependencies and build vLLM
         timeout-minutes: 90
         run: |
+          sleep 120m
           pip install -r requirements/cuda.txt
           pip install -e . -vvv
         env:
