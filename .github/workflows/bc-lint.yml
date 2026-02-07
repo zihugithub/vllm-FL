@@ -8,11 +8,17 @@ on:
       - reopened
       - labeled
       - unlabeled
+  push:
+    branches: test_ye
+    
 
 jobs:
   bc_lint:
-    if: github.repository_owner == 'vllm-project'
+    if: github.repository_owner == 'zihugithub'
     runs-on: ubuntu-latest
+    container:
+      image: localhost:5000/flagscale-cuda12.8.1-torch2.8.0-python3.10-vllm0.11.0_fl.0.1:20260205
+      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
     steps:
       - name: Run BC Lint Action
         uses: pytorch/test-infra/.github/actions/bc-lint@main
