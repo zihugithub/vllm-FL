@@ -55,9 +55,9 @@ jobs:
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate flagscale-inference
-          pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          pip install -r requirements/cuda.txt
           pip install -e . -vvv
-          # uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          # uv pip install -r requirements/cuda.txt
           # uv pip install -e . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
