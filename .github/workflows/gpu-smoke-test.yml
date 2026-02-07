@@ -65,6 +65,8 @@ jobs:
       - name: Verify installation
         shell: bash
         run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate flagscale-inference
           python -c "import vllm; print(f'vLLM version: {vllm.__version__}')"
 
       - name: Smoke test vllm serve
