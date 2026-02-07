@@ -61,6 +61,14 @@ jobs:
           chmod +x "$BIN_DIR/jq"
           jq --version
 
+      - name: Install dependencies and build vLLM
+        timeout-minutes: 90
+        run: |
+          pip install -r requirements/cuda.txt
+          pip install -e . -vvv
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
+
       - name: Load config for ${{ matrix.subset }}
         id: config
         run: |
@@ -90,5 +98,7 @@ jobs:
           echo "ignore: $ignore"
           echo "deselect: $deselect"
           echo "test_files: $test_files"
+
+          sleep 120m
 
           torchrun --nproc_per_node=8 -m pytest -q -x -p no:warnings $ignore $deselect $test_files

@@ -9,7 +9,7 @@ on:
       - labeled
       - unlabeled
   push:
-    branches: test_ye
+    branches: main
     
 
 jobs:
