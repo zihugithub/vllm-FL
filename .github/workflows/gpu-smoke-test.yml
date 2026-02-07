@@ -52,6 +52,8 @@ jobs:
 
       - name: Install dependencies and build vLLM
         run: |
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate flagscale-inference
           uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
           uv pip install -e . -vvv
         env:

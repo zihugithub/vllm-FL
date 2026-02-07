@@ -64,7 +64,8 @@ jobs:
       - name: Install dependencies and build vLLM
         timeout-minutes: 90
         run: |
-          sleep 120m
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate flagscale-inference
           pip install -r requirements/cuda.txt
           pip install -e . -vvv
         env:
@@ -100,6 +101,7 @@ jobs:
           echo "deselect: $deselect"
           echo "test_files: $test_files"
 
-          sleep 120m
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate flagscale-inference
 
           torchrun --nproc_per_node=8 -m pytest -q -x -p no:warnings $ignore $deselect $test_files
