@@ -37,25 +37,28 @@ jobs:
           submodules: false
           set-safe-directory: true
 
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: |
-            requirements/**/*.txt
-            pyproject.toml
-          python-version: '3.12'
+      # - uses: astral-sh/setup-uv@v7
+      #   with:
+      #     enable-cache: true
+      #     cache-dependency-glob: |
+      #       requirements/**/*.txt
+      #       pyproject.toml
+      #     python-version: '3.12'
 
-      - name: Create virtual environment
-        run: |
-          uv venv
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+      # - name: Create virtual environment
+      #   run: |
+      #     uv venv
+      #     echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies and build vLLM
+        shell: bash
         run: |
           source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate flagscale-inference
-          uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
-          uv pip install -e . -vvv
+          pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          pip install -e . -vvv
+          # uv pip install -r requirements/cuda.txt --index-strategy unsafe-best-match
+          # uv pip install -e . -vvv
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
 
@@ -69,6 +72,9 @@ jobs:
         run: |
           source .github/workflows/scripts/gpu_check.sh
           wait_for_gpu
+
+          source /opt/miniconda3/etc/profile.d/conda.sh
+          conda activate flagscale-inference
 
           # Start server in background
           vllm serve /home/gitlab-runner/data/Qwen2.5-7B-Instruct \
