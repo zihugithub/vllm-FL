@@ -11,19 +11,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checkout_and_config:
+  unit_test:
     defaults:
       run:
         shell: bash
     runs-on: [ self-hosted, ye_test]
     container:
-      image: localhost:5000/flagscale:cuda12.8.1-cudnn9.7.1-python3.12-torch2.7.1-time2510131515
+      image: harbor.baai.ac.cn/flagscale/cuda12.8.1-torch2.8.0-python3.10-vllm0.11.0_fl.0.1:20260205
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
     strategy:
       matrix:
         subset:
           - benchmarks
           - compile
+          - config
+          - cuda
+          - detokenizer
+          - engine
+          - entrypoints
+          - model_executor
+          - models
+          - multimodal
+          - plugins_tests
+          - runai_model_streamer_test
+          - ./
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,12 +83,12 @@ jobs:
 
       - name: Run test for ${{ matrix.subset }}
         run: |
-          ignore=${{ steps.config.outputs.ignore }}
-          deselect=${{ steps.config.outputs.deselect }}
-          test_files=${{ steps.config.outputs.test_files }}
+          ignore="${{ steps.config.outputs.ignore }}"
+          deselect="${{ steps.config.outputs.deselect }}"
+          test_files="${{ steps.config.outputs.test_files }}"
 
           echo "ignore: $ignore"
           echo "deselect: $deselect"
           echo "test_files: $test_files"
 
-          # torchrun --nproc_per_node=8 -m pytest -q -x -p no:warnings $ignore $deselect $test_files
+          torchrun --nproc_per_node=8 -m pytest -q -x -p no:warnings $ignore $deselect $test_files
