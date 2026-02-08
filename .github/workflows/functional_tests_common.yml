@@ -92,7 +92,6 @@ jobs:
           load_config ${{ matrix.subset }}
 
       - name: Run test for ${{ matrix.subset }}
-        working-directory: ./tests
         run: |
           ignore="${{ steps.config.outputs.ignore }}"
           deselect="${{ steps.config.outputs.deselect }}"
