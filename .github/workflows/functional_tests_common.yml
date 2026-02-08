@@ -2,7 +2,7 @@ name: Unit Tests CUDA
 
 on:
   push:
-    branches: test_ye
+    branches: main
   pull_request:
     branches: main
 
@@ -92,7 +92,6 @@ jobs:
           load_config ${{ matrix.subset }}
 
       - name: Run test for ${{ matrix.subset }}
-        continue-on-error: false
         run: |
           ignore="${{ steps.config.outputs.ignore }}"
           deselect="${{ steps.config.outputs.deselect }}"

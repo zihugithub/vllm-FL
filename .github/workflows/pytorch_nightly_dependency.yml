@@ -4,7 +4,7 @@ on:
   push:
     branches:
       # - run_test251211
-      - test_ye
+      - main
     paths:
       - 'requirements/nightly_torch_test.txt'
       - 'tests/standalone_tests/pytorch_nightly_dependency.sh'
