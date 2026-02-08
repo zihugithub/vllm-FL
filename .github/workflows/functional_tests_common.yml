@@ -2,7 +2,7 @@ name: Unit Tests CUDA
 
 on:
   push:
-    branches: main
+    branches: test_ye
   pull_request:
     branches: main
 
