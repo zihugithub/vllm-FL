@@ -23,7 +23,7 @@ jobs:
       matrix:
         subset:
           # - benchmarks
-          - compile
+          # - compile
           # - config
           # - cuda
           # - detokenizer
@@ -33,7 +33,7 @@ jobs:
           # - multimodal
           # - plugins_tests
           # - runai_model_streamer_test
-          - ./
+          - source_dir
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

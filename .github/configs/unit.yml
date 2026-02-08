@@ -109,7 +109,7 @@ unit-conf:
       - tests/runai_model_streamer_test/test_runai_model_streamer_loader.py::test_runai_model_loader_download_files
       - tests/runai_model_streamer_test/test_runai_utils.py::test_runai_list_safetensors_local
       - tests/runai_model_streamer_test/test_weight_utils.py::test_runai_model_loader
-  ./:
+  source_dir:
     depth: 1
     ignore:
       - pass

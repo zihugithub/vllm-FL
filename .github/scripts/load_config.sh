@@ -44,7 +44,7 @@ load_config() {
         DEPTH="$DEPTH_JSON"
     fi
 
-    if [ "$UNIT_NAME" = "./" ]; then
+    if [ "$UNIT_NAME" = "source_dir" ]; then
         TEST_FILES=$(find "tests" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,/ /g; s/ $//')
     else
         TEST_FILES=$(find "tests/$UNIT_NAME" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,/ /g; s/ $//')
