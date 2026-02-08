@@ -59,6 +59,7 @@ jobs:
           source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate flagscale-inference
           pip install -r requirements/cuda.txt
+          pip install -r requirements/common.txt
           pip install -e . -vvv
           # uv pip install -r requirements/cuda.txt
           # uv pip install -e . -vvv
