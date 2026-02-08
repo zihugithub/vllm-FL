@@ -44,7 +44,7 @@ load_config() {
         DEPTH="$DEPTH_JSON"
     fi
 
-    TEST_FILES=$(find "tests/$UNIT_NAME" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,/ /g; s/ $//')
+    TEST_FILES=$(find "$UNIT_NAME" -mindepth 1 -maxdepth $DEPTH -type f -name "test_*.py" | tr '\n' ',' | sed 's/,/ /g; s/ $//')
 
     if [ $(echo $IGNORE_JSON | jq 'length') -gt 0 ]; then
         IGNORE=$(echo $IGNORE_JSON | jq -r '.[] | "--ignore=\(.)"' | tr '\n' ' ')
