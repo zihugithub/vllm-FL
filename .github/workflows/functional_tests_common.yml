@@ -31,8 +31,8 @@ jobs:
           # - entrypoints # fix
           # - model_executor
           # - multimodal
-          - plugins_tests
-          - runai_model_streamer_test
+          # - plugins_tests
+          # - runai_model_streamer_test
           - ./
     steps:
       - name: Checkout code

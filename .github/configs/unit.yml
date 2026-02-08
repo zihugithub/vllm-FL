@@ -33,6 +33,7 @@ unit-conf:
       - tests/compile/test_silu_mul_quant_fusion.py::test_fusion_silu_and_mul_quant
       - tests/compile/piecewise/test_full_cudagraph.py::TestFullCUDAGraph::test_full_cudagraph
       - tests/compile/piecewise/test_simple.py::test_simple_piecewise_compile
+      - tests/compile/piecewise/test_multiple_graphs.py::test_multi_graph_piecewise_compile_outputs_equal
   config:
     depth: all
     ignore:
