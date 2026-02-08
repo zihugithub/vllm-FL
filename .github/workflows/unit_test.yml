@@ -1,0 +1,49 @@
+name: Functional Tests Nvidia
+
+# 定义为可复用工作流
+on:
+  workflow_call:
+
+jobs:
+  unit_test:
+    defaults:
+      run:
+        shell: bash
+    runs-on: [self-hosted, ye_test]
+    strategy:
+      fail-fast: false
+      matrix:
+        subset:
+          - benchmarks
+          - compile
+          - config
+          - cuda
+          - detokenizer
+          - engine
+          - entrypoints
+          - model_executor
+          - models
+          - multimodal
+          - plugins_tests
+          - runai_model_streamer_test
+          - ./
+    steps:
+      - name: Run Unit Test for ${{ matrix.subset }}
+        id: run_test
+        run: |
+          echo "======================================"
+          echo "当前运行容器信息："
+          # 验证是否在主工作流的容器中运行（可选，用于调试）
+          cat /etc/os-release
+          nvidia-smi  # 验证CUDA/GPU是否可用
+          echo "--------------------------------------"
+          echo "Running unit tests for subset: ${{ matrix.subset }}"
+          echo "======================================"
+          # 替换为实际测试命令，例如：
+          # pytest ${{ matrix.subset }} -v
+          echo "Test completed for subset: ${{ matrix.subset }}"
+          
+      - name: Report Test Result
+        if: always()
+        run: |
+          echo "Test for ${{ matrix.subset }} finished with status: ${{ steps.run_test.outcome }}"
