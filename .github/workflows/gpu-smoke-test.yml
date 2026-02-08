@@ -3,8 +3,7 @@ name: GPU Silicon Smoke Test
 on:
   push:
     branches:
-      # - run_test251211
-      - main
+      - test_ye
   workflow_dispatch:  # Manual trigger
 
 concurrency:
@@ -81,6 +80,8 @@ jobs:
 
           source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate flagscale-inference
+
+          sleep 120m
 
           # Start server in background
           vllm serve /home/gitlab-runner/data/Qwen2.5-7B-Instruct \
