@@ -81,8 +81,6 @@ jobs:
           source /opt/miniconda3/etc/profile.d/conda.sh
           conda activate flagscale-inference
 
-          sleep 120m
-
           # Start server in background
           vllm serve /home/gitlab-runner/data/Qwen2.5-7B-Instruct \
             --gpu-memory-utilization=0.9 \
