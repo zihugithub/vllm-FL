@@ -3,7 +3,7 @@ name: GPU Silicon Smoke Test
 on:
   push:
     branches:
-      - test_ye
+      - main
   workflow_dispatch:  # Manual trigger
 
 
