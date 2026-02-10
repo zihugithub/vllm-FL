@@ -28,7 +28,8 @@ jobs:
       test_result: ${{ steps.dependency-check.outcome }}
     defaults:
       run:
-        shell: bash -c "source /opt/miniconda3/etc/profile.d/conda.sh && conda activate flagscale-inference && $0"
+        shell: bash
+        
     container:
       image: localhost:5000/flagscale-cuda12.8.1-torch2.8.0-python3.10-vllm0.11.0_fl.0.1:20260205
       options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
@@ -58,6 +59,10 @@ jobs:
         shell: bash
         run: |
           echo "===== System Info ====="
+          find / -name "conda.sh" 2>/dev/null | grep profile.d
+          /root/miniconda3/bin/conda info --envs || /opt/conda/bin/conda info --envs
+          which python
+          python --version
           sleep 120m
           #source /opt/miniconda3/etc/profile.d/conda.sh
           #conda activate flagscale-inference
