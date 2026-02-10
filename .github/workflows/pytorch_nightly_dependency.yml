@@ -26,18 +26,13 @@ jobs:
     runs-on: [ self-hosted, ye_test ]
     outputs:
       test_result: ${{ steps.dependency-check.outcome }}
+    defaults:
+      run:
+        shell: bash -c "source /opt/miniconda3/etc/profile.d/conda.sh && conda activate flagscale-inference && export PATH=/opt/miniconda3/envs/flagscale-inference/bin:$PATH && $0"
     
     container:
       image: localhost:5000/flagscale-cuda12.8.1-torch2.8.0-python3.10-vllm0.11.0_fl.0.1:20260205
-      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535
-      entrypoint: ["/bin/bash", "-c"]
-      command: >
-        source /opt/miniconda3/etc/profile.d/conda.sh && 
-        conda activate flagscale-inference && 
-        export PATH=/opt/miniconda3/envs/flagscale-inference/bin:$PATH && 
-        export CONDA_DEFAULT_ENV=flagscale-inference && 
-        exec /bin/bash -s "$@"
-      
+      options: --gpus all --shm-size=500g --hostname flagscale_cicd --user root --ulimit nofile=65535:65535      
 
     steps:
       - name: Checkout Code
@@ -64,7 +59,6 @@ jobs:
         shell: bash
         run: |
           echo "===== System Info ====="
-          sleep 120m
           #source /opt/miniconda3/etc/profile.d/conda.sh
           #conda activate flagscale-inference
           uname -a
