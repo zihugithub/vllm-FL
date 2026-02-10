@@ -60,7 +60,7 @@ jobs:
         run: |
           echo "===== System Info ====="
           find / -name "conda.sh" 2>/dev/null | grep profile.d
-          /root/miniconda3/bin/conda info --envs || /opt/conda/bin/conda info --envs
+          /opt/miniconda3/bin/conda info --envs || /opt/conda/bin/conda info --envs
           which python
           python --version
           sleep 120m
