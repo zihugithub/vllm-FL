@@ -1,4 +1,4 @@
-# FlagScale Test Suite
+# vllm-FL Test Suite
 
 ## Quick Start
 
