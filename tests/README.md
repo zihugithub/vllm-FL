@@ -57,4 +57,4 @@ tests/
 ## Adding Tests
 
 ### Unit Test
-Add test file: `unit_tests/test_<name>.py`
+Add test file: `tests/<unit_tests>/test_<name>.py`
